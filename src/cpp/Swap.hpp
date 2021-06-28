@@ -95,8 +95,10 @@ public:
         return buf;
     }
 
+    float value {0};
+
     float Value (void) const override
-        {return lfix.rate;} // FIXME: need a better way to get the PV (not-at-the-money quotes?!)
+        {return value;}
 
     // void AddToCurve (YieldCurve &curve) const override;
 };

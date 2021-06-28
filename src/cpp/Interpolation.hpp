@@ -61,7 +61,7 @@ namespace math {
 //
 //     Steffen’s method guarantees the monotonicity of the interpolating
 //     function between the given data points.
-//     Therefore, minima and maxima can only occur exactly at the data points,
+//     Therefore, minima and maximgsl_interp_typea can only occur exactly at the data points,
 //     and there can never be spurious oscillations between data points.
 //     The interpolated function is piecewise cubic in each interval.
 //     The resulting curve and its first derivative are guaranteed
@@ -70,18 +70,37 @@ namespace math {
 
 class Interpolator1D {
 public:
+
+    // PiecewiseConstant
+    enum Type {None,Linear,Polynomial,CubicSpline,CubicSplinePeriodic,Akima,AkimaPeriodic,Steffen};
+
+    static const gsl_interp_type *GetGSLType (Type itype) {
+        switch(itype){
+            case None:                  return nullptr;
+            case Linear:                return gsl_interp_linear;
+            case Polynomial:            return gsl_interp_polynomial;
+            case CubicSpline:           return gsl_interp_cspline;
+            case CubicSplinePeriodic:   return gsl_interp_cspline_periodic;
+            case Akima:                 return gsl_interp_akima;
+            case AkimaPeriodic:         return gsl_interp_akima_periodic;
+            case Steffen:               return gsl_interp_steffen;
+            default: throw std::invalid_argument(__PRETTY_FUNCTION__);
+        }
+    }
+
     using interpolation_t = std::unique_ptr<gsl_spline, std::function<void(gsl_spline*)> >;
     using acc_t = std::unique_ptr<gsl_interp_accel, std::function<void(gsl_interp_accel*)> >;
 
-    Interpolator1D(void) {}
+    Interpolator1D(void) : type(nullptr) {}
 
-    Interpolator1D(const Interpolator1D &f) : Interpolator1D() {
-        *this = f;
-    }
+    Interpolator1D(const Interpolator1D &f) : Interpolator1D() {*this = f;}
 
-    Interpolator1D(std::span<double> x,std::span<double> y,const gsl_interp_type *type=gsl_interp_cspline )
-        : type(type)
-    {
+    Interpolator1D(
+        std::span<double> x,
+        std::span<double> y,
+        Type itype
+    ) {
+        type = GetGSLType(itype);
         const auto size = std::min (x.size(), y.size());
         interpolation = interpolation_t (
             gsl_spline_alloc(type, size),
@@ -94,28 +113,14 @@ public:
         acc = acc_t( gsl_interp_accel_alloc (), [] (gsl_interp_accel*a) {gsl_interp_accel_free(a);} );
     }
 
-    // Interpolator1D(const std::vector<double> &x,const std::vector<double> &y,const gsl_interp_type *type=gsl_interp_cspline )
-    //     : Interpolator1D( std::span{x.data(),x.size()}, std::span{y.data(),y.size()}, type)
-    // {}
-
-    // Interpolator1D(const std::vector<double> &x,const std::vector<double> &y,const gsl_interp_type *type=gsl_interp_cspline )
-    //     : type(type)
-    // {
-    //     const auto size = std::min (x.size(), y.size());
-    //     interpolation = interpolation_t (
-    //         gsl_spline_alloc(type, size),
-    //         [] (gsl_spline *g) {gsl_spline_free(g);}
-    //     );
-    //
-    //     if( auto code=gsl_spline_init (interpolation.get(), x.data(), y.data(), size); code!=GSL_SUCCESS )
-    //         throw std::runtime_error(std::string("Interpolator1D::Interpolator1D: gsl_spline_init ")+gsl_strerror(code));
-    //
-    //     acc = acc_t( gsl_interp_accel_alloc (), [] (gsl_interp_accel*a) {gsl_interp_accel_free(a);} );
-    // }
-
     template<typename F>
-    Interpolator1D(F f,const std::pair<double,double> &range,size_t intervals,const gsl_interp_type *type=gsl_interp_cspline)
-        : type(type)
+    Interpolator1D(
+        F f,
+        const std::pair<double,double> &range,
+        size_t intervals,
+        Type itype=Type::CubicSpline
+    )
+        : type (GetGSLType(itype))
     {
         if( intervals==0 )
             throw std::invalid_argument("Interpolator1D: 'intervals' must be positive");
@@ -158,7 +163,6 @@ public:
         return value_on_fail;
     }
 
-
     Interpolator1D(Interpolator1D &&f) {
         interpolation = std::move(f.interpolation);
         acc = std::move(f.acc);
@@ -168,6 +172,7 @@ public:
         if(f.interpolation.get()==nullptr) {
             interpolation.reset(nullptr);
             acc.reset(nullptr);
+            type = nullptr;
         } else {
             type = f.type;
             interpolation = interpolation_t (
@@ -187,6 +192,7 @@ public:
         if( &f!=this ) {
             interpolation = std::move(f.interpolation);
             acc = std::move(f.acc);
+            type = f.type;
         }
         return *this;
     }

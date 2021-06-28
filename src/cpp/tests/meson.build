@@ -5,7 +5,7 @@ interpolation = executable (
     link_with           : [],
     dependencies : [gsl],
 )
-test('test interpolation', interpolation)
+test('interpolation', interpolation)
 
 minimization = executable (
     'minimization',
@@ -14,7 +14,7 @@ minimization = executable (
     link_with           : [],
     dependencies : [gsl],
 )
-test('test minimization', minimization)
+test('minimization', minimization)
 
 # swap = executable (
 #     'swap',
@@ -32,7 +32,7 @@ curves = executable (
     link_with           : [curveslib],
     dependencies : [gsl],
 )
-test('test curves', curves)
+test('curves', curves)
 
 gsl_init = executable (
     'gsl_init',
@@ -41,4 +41,4 @@ gsl_init = executable (
     link_with           : [],
     dependencies : [gsl],
 )
-test('test gsl_init', gsl_init)
+test('gsl_init', gsl_init)

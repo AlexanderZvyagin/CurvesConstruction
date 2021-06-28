@@ -14,33 +14,60 @@ private:
     std::map <float,std::shared_ptr<Instrument>> instruments;
 public:
 
-    using math::Interpolator1D::operator =; // (math::Interpolator1D &&);
+    using math::Interpolator1D::operator =;
 
-    YieldCurve (const gsl_interp_type *_type=gsl_interp_linear) {
-        type = _type;
-    }
-    YieldCurve (std::span<double> vx, std::span<double> vy, const gsl_interp_type *type=gsl_interp_linear)
-        : math::Interpolator1D(vx,vy,type)
+    YieldCurve (
+        void
+    ) {}
+
+    YieldCurve (
+        std::span<double> vx,
+        std::span<double> vy,
+        math::Interpolator1D::Type itype
+    )
+        : math::Interpolator1D (vx,vy,itype)
     {}
 
     const std::map <float,std::shared_ptr<Instrument>> &
-        GetInstruments (void) const {return instruments;}
+    GetInstruments (
+        void
+    ) const {return instruments;}
 
-    YieldCurve & Add (const Instrument &x);
+    YieldCurve &
+    Add (
+        const Instrument &x
+    );
 
-    YieldCurve & Build (const gsl_interp_type *type=gsl_interp_linear,float yield_to_infinity=0);
+    YieldCurve &
+    Build (
+        math::Interpolator1D::Type t = math::Interpolator1D::Type::CubicSpline,
+        float yield_to_infinity = 0
+    );
 
-    float GetForwardRate (float t1,float t2) const {
-        return Integral(t1,t2);
+    float GetForwardRate (
+        float t1,
+        float t2
+    ) const {
+        return Integral(t1,t2)/(t2-t1);
     }
 
-    float GetDiscountFactor (float t1,float t2) const {
+    float
+    GetDiscountFactor (
+        float t1,
+        float t2
+    ) const {
         return std::exp(-Integral(t1,t2));
     }
 
-    float GetDiscountFactor (float t1) const {
+    float
+    GetDiscountFactor (
+        float t1
+    ) const {
         return std::exp(-Integral(0,t1));
     }
 
-    void Print(void) const;
+    void
+    Print (
+        void
+    ) const;
 };

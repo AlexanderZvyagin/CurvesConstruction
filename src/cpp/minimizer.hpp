@@ -16,33 +16,8 @@ struct WrapperForMinimizer {
         return reinterpret_cast <WrapperForMinimizer*> (data) -> cpp_f(std::span<double>(v->data,v->size));
     }
     F cpp_f;
-
-    // gsl_function gsl_f;
     WrapperForMinimizer (F f) : cpp_f(f) {}
-    //     gsl_f.function = Call;
-    //     gsl_f.params = this;
-    // }
-//
-//
-//
-//     // static double Call (double x, void *pars) {
-//     //     return reinterpret_cast <Wrapper*> (pars) -> cpp_f(x);
-//     // }
 };
-
-//
-// class Minimizer {
-// protected:
-//     static double for_gsl_minimization (const gsl_vector *v, void *data) {
-//         auto self = reinterpret_cast<Minimizer*> (data);
-//         return
-//     }
-// public:
-//
-// };
-
-
-
 
 template <typename F>
 Result minimize (
@@ -94,8 +69,8 @@ Result minimize (
         status = gsl_multimin_test_size (size, opts.eps_abs.value());
     } while (status == GSL_CONTINUE && iter < opts.iters.value());
 
-    if(status!=GSL_SUCCESS)
-        throw std::runtime_error(gsl_strerror(status));
+    // if(status!=GSL_SUCCESS)
+    //     throw std::runtime_error(gsl_strerror(status));
 
     Result r;
     for(auto x: std::span{s->x->data,s->x->size})
@@ -108,6 +83,5 @@ Result minimize (
 
     return r;
 }
-
 
 }

@@ -65,6 +65,8 @@ struct Result {
     double ValueOr (double v) {
         return value.value_or(v);
     }
+
+    operator bool (void) const {return !error_text.has_value();}
 };
 
 inline

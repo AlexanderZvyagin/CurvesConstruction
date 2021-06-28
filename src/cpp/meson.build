@@ -71,3 +71,4 @@ curveslib = static_library (
 # )
 
 subdir('tests')
+subdir('python')

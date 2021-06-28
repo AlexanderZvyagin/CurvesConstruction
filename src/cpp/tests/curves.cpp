@@ -76,7 +76,7 @@ TEST_CASE("swap"){
 
     curve_discount
         .Add (swap1)
-        .Build ()
+        .Build (math::Interpolator1D::Type::Linear)
     ;
     curve_discount.Print();
 }

@@ -15,7 +15,10 @@ YieldCurve & YieldCurve::Add (const Instrument &x) {
 //     return *this;
 // }
 
-YieldCurve & YieldCurve::Build (const gsl_interp_type *_type,float yield_to_infinity) {
+YieldCurve & YieldCurve::Build (math::Interpolator1D::Type itype,float yield_to_infinity) {
+
+    // printf("%s itype=%d\n",__PRETTY_FUNCTION__,(int)itype);
+
     // grid on time
     std::vector<double> vx {0}; // always start with t=0 point
     for(auto [t,instr]: GetInstruments()) {
@@ -27,10 +30,12 @@ YieldCurve & YieldCurve::Build (const gsl_interp_type *_type,float yield_to_infi
 
     std::vector<math::Parameter> pars (vx.size()-1,math::Parameter(0,1e-2));
 
-    printf("x=[");
-    for(auto x: vx)
-        printf("%g,",x);
-    printf("]\n");
+    // printf("-1-\n");
+    //
+    // printf("x=[");
+    // for(auto x: vx)
+    //     printf("%g,",x);
+    // printf("]\n");
 
     // const float yield_to_infinity = 0; // FIXME
 
@@ -45,11 +50,13 @@ YieldCurve & YieldCurve::Build (const gsl_interp_type *_type,float yield_to_infi
 
 
         // YieldCurve curve(std::span<double>(vx.data(),vx.size()),pars,_type);
-        // printf("%d %d\n",vx.size(),pars.size());
+        // printf("vx,vy sizes: %d %d    itype=%d\n",(int)vx.size(),(int)vy.size(),(int)(itype));
+
+
         YieldCurve curve (
             std::span<double>(vx.data(),vx.size()),
             std::span<double>(vy.data(),vy.size()),
-            _type
+            itype
         );
         // printf("ok!\n");
 
@@ -66,7 +73,7 @@ YieldCurve & YieldCurve::Build (const gsl_interp_type *_type,float yield_to_infi
     };
 
     math::Options opts;
-    opts.iters = 1000;
+    opts.iters = 10000;
     auto r = math::minimize(
         func,
         pars,
@@ -74,6 +81,7 @@ YieldCurve & YieldCurve::Build (const gsl_interp_type *_type,float yield_to_infi
     );
 
     std::cout << r << "\n";
+    if(!r) throw std::runtime_error(r.error_text.value());
 
     std::vector<double> vy;
     for( auto y: r.x)
@@ -83,10 +91,11 @@ YieldCurve & YieldCurve::Build (const gsl_interp_type *_type,float yield_to_infi
     if(vx.size()!=vy.size())
         throw std::logic_error("YieldCurve::Build: internal error");
 
-    *this = math::Interpolator1D(
+    *this = math::Interpolator1D (
         std::span<double>(vx.data(),vx.size()),
         std::span<double>(vy.data(),vy.size()),
-        _type);
+        itype
+    );
 
     return *this;
 }

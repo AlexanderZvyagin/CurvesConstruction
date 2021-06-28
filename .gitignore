@@ -1,0 +1,9 @@
+# created by virtualenv automatically
+bin
+lib
+pyvenv.cfg
+**/.ipynb_checkpoints
+
+web
+doc
+papers
