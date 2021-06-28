@@ -13,7 +13,7 @@ TEST_CASE("basic"){
     CHECK_THROWS_AS( f(1), std::exception);
 }
 
-TEST_CASE("comnpare"){
+TEST_CASE("compare"){
     auto
         f = [] (double x) {return x*x;};
     const std::pair<double,double>

@@ -21,9 +21,9 @@ test('minimization', minimization)
 #     sources : ['swap.cpp'],
 #     include_directories : ['..','../include'],
 #     link_with           : [],
-#     dependencies : [fmt,gsl,libsystemd,threads],
+#     dependencies : [gsl],
 # )
-# test('test swap', swap)
+# test('swap', swap)
 
 curves = executable (
     'curves',

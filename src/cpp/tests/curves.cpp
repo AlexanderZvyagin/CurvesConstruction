@@ -45,17 +45,7 @@ TEST_CASE("fra"){
 TEST_CASE("swap"){
 
     YieldCurve
-        curve_for_float_leg,
-        curve_discount;
-
-    curve_for_float_leg
-        .Add (ForwardRateAgreement(0,1,0.01))
-        .Add (ForwardRateAgreement(0.5,2,0.02))
-        .Add (ForwardRateAgreement(0,3,0.03))
-        .Build ()
-    ;
-    curve_for_float_leg.Print();
-
+        curve;
 
     Swap swap1;
     if(1) {
@@ -64,19 +54,19 @@ TEST_CASE("swap"){
         LegFixed &lfix = swap1.lfix;
         lfix.t0 = 0;
         lfix.dt = 1;
-        lfix.n = 2;
-        lfix.rate = 0.05;
+        lfix.n = 10;
+        lfix.rate = 0.01;
 
         LegFloat &lflt = swap1.lflt;
-        lflt.t0 = 0;
-        lflt.dt = 0.5;
-        lflt.n = 2;
-        lflt.curve = &curve_for_float_leg;
+        lflt.t0 = lfix.t0;
+        lflt.dt = lfix.dt;
+        lflt.n  = lfix.n;
+        lflt.curve = &curve;
     }
 
-    curve_discount
+    curve
         .Add (swap1)
         .Build (math::Interpolator1D::Type::Linear)
     ;
-    curve_discount.Print();
+    curve.Print();
 }
