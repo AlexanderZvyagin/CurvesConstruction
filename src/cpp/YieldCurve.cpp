@@ -40,20 +40,19 @@ YieldCurve & YieldCurve::Build (math::Interpolator1D::Type itype,float yield_to_
     // const float yield_to_infinity = 0; // FIXME
 
     auto func = [&] (const std::span<double> pars) -> double {
-        // printf("y=[");
-        // for(auto x: pars)
-        //     printf("%g,",x);
-        // printf("]\n");
 
         std::vector<double> vy(pars.begin(),pars.end());
         vy.push_back(yield_to_infinity);
 
+        // printf("y=[");
+        // for(auto x: vy)
+        //     printf("%g,",x);
+        // printf("]\n");
 
         // YieldCurve curve(std::span<double>(vx.data(),vx.size()),pars,_type);
         // printf("vx,vy sizes: %d %d    itype=%d\n",(int)vx.size(),(int)vy.size(),(int)(itype));
 
-
-        YieldCurve curve (
+        *this = Interpolator1D (
             std::span<double>(vx.data(),vx.size()),
             std::span<double>(vy.data(),vy.size()),
             itype
@@ -63,10 +62,10 @@ YieldCurve & YieldCurve::Build (math::Interpolator1D::Type itype,float yield_to_
         // ft();
         // printf("C %g %g %g\n",curve.GetDiscountFactor(0),curve.GetDiscountFactor(3),curve.GetDiscountFactor(5));
 
+        // printf("Calculating result... %d %d\n",(int)curve.GetX().size(),(int)curve.GetY().size());
         double result {0};
         for(auto &[t,instr]: instruments) {
-            // printf("+= %g %g\n",instr->Value(),instr->Eval(curve));
-            result += std::pow( instr->Value()-instr->Eval(curve), 2 );
+            result += std::pow( instr->Value()-instr->Eval(*this), 2 );
         }
         // printf("result=%g\n",result);
         return result;
