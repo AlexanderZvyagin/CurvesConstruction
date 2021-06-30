@@ -8,15 +8,7 @@
 #include "ZeroCouponBond.hpp"
 #include "ForwardRateAgreement.hpp"
 #include "Swap.hpp"
-
-// extrapolation: constant from the last point
-//
-// the curve internal time is defined as a real number,
-// because of the integral(r*dt)
-// the curves starts at t=0 (by definition)
-//
-// on the curve construction, we create a new curve
-// from the previous one
+#include "common.hpp"
 
 TEST_CASE("zcb"){
     YieldCurve curve;
@@ -66,6 +58,19 @@ TEST_CASE("swap"){
 
     curve
         .Add (swap1)
+        .Build (math::Interpolator1D::Type::Linear)
+    ;
+    curve.Print();
+}
+
+TEST_CASE("build1"){
+    YieldCurve curve;
+
+    curve
+        .Add (ForwardRateAgreement(0,1*month,-0.56200*pc))
+        .Add (ForwardRateAgreement(0,3*month,-0.53800*pc))
+        .Add (ForwardRateAgreement(0,6*month,-0.51300*pc))
+        .Add (ForwardRateAgreement(0,1*year ,-0.47800*pc))
         .Build (math::Interpolator1D::Type::Linear)
     ;
     curve.Print();

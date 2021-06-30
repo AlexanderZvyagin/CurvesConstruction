@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <cmath>
 #include <memory>
 #include <functional>
@@ -13,6 +14,59 @@
 #include "gsl_init.hpp"
 
 namespace math {
+
+template <typename T>
+class InterpolatorPiecewiseConstant {
+protected:
+    std::map<T,T> xy;
+public:
+
+    InterpolatorPiecewiseConstant(
+        std::span<T> x,
+        std::span<T> y
+    ) {
+        for(unsigned i=0; i<std::min(x.size(),y.size()); i++)
+            xy[x[i]] = y[i];
+    }
+
+    T operator () (T x) const {
+        if(xy.empty())
+            throw std::runtime_error(__PRETTY_FUNCTION__);
+        auto it = xy.upper_bound(x);
+        if(it==xy.end()) return xy.rbegin()->second;
+        it--;
+        return it==xy.end() ? NAN: it->second;
+    }
+
+    T EvalOr (T x,T value_on_fail=NAN) const try {
+        return (*this) (x);
+    } catch (...) {
+        return value_on_fail;
+    }
+
+    T Integral (T a,T b) const {
+        auto it = xy.upper_bound(a);
+        // printf("Integral from %g to %g.  First t=%g\n",a,b,it->first);
+        T x {a}, integral {0};
+
+        while(x<b){
+            if(it==xy.end())
+                throw std::logic_error(__PRETTY_FUNCTION__);
+            // printf("x=[%g,%g] dx=%g y=%g",x,it->first,it->first-x,it->second);
+            float dx = it->first - x;
+            x = it->first;
+            if(dx<0) break;
+            integral += dx*it->second;
+            it++;
+            // printf(" %s\n",it==xy.end()?"end":"cont");
+        }
+
+        // printf("Integral = %g\n",integral);
+
+        return integral;
+    }
+
+};
 
 // https://www.gnu.org/software/gsl/doc/html/interp.html#c.gsl_interp_type
 // gsl_interp_type *gsl_interp_linear
@@ -67,16 +121,15 @@ namespace math {
 //     The resulting curve and its first derivative are guaranteed
 //     to be continuous, but the second derivative may be discontinuous.
 
-
 class Interpolator1D {
 public:
 
-    // PiecewiseConstant
-    enum Type {None,Linear,Polynomial,CubicSpline,CubicSplinePeriodic,Akima,AkimaPeriodic,Steffen};
+    enum Type {None,PiecewiseConstant,Linear,Polynomial,CubicSpline,CubicSplinePeriodic,Akima,AkimaPeriodic,Steffen};
 
     static const gsl_interp_type *GetGSLType (Type itype) {
         switch(itype){
             case None:                  return nullptr;
+            case PiecewiseConstant:     return nullptr;
             case Linear:                return gsl_interp_linear;
             case Polynomial:            return gsl_interp_polynomial;
             case CubicSpline:           return gsl_interp_cspline;
@@ -91,7 +144,7 @@ public:
     using interpolation_t = std::unique_ptr<gsl_spline, std::function<void(gsl_spline*)> >;
     using acc_t = std::unique_ptr<gsl_interp_accel, std::function<void(gsl_interp_accel*)> >;
 
-    Interpolator1D(void) : type(nullptr) {}
+    Interpolator1D(void) : itype(None), type(nullptr) {}
 
     Interpolator1D(const Interpolator1D &f) : Interpolator1D() {*this = f;}
 
@@ -99,18 +152,25 @@ public:
         std::span<double> x,
         std::span<double> y,
         Type itype
-    ) {
-        type = GetGSLType(itype);
-        const auto size = std::min (x.size(), y.size());
-        interpolation = interpolation_t (
-            gsl_spline_alloc(type, size),
-            [] (gsl_spline *g) {gsl_spline_free(g);}
-        );
+    )
+        : itype(itype)
+        , type (GetGSLType(itype))
+    {
+        if(type){
+            const auto size = std::min (x.size(), y.size());
+            interpolation = interpolation_t (
+                gsl_spline_alloc(type, size),
+                [] (gsl_spline *g) {gsl_spline_free(g);}
+            );
 
-        if( auto code=gsl_spline_init (interpolation.get(), x.data(), y.data(), size); code!=GSL_SUCCESS )
-            throw std::runtime_error(std::string("Interpolator1D::Interpolator1D: gsl_spline_init ")+gsl_strerror(code));
+            if( auto code=gsl_spline_init (interpolation.get(), x.data(), y.data(), size); code!=GSL_SUCCESS )
+                throw std::runtime_error(std::string("Interpolator1D::Interpolator1D: gsl_spline_init ")+gsl_strerror(code));
 
-        acc = acc_t( gsl_interp_accel_alloc (), [] (gsl_interp_accel*a) {gsl_interp_accel_free(a);} );
+            acc = acc_t( gsl_interp_accel_alloc (), [] (gsl_interp_accel*a) {gsl_interp_accel_free(a);} );
+        }
+        if(itype==PiecewiseConstant){
+            iconst.reset(new InterpolatorPiecewiseConstant<double>(x,y));
+        }
     }
 
     template<typename F>
@@ -120,7 +180,8 @@ public:
         size_t intervals,
         Type itype=Type::CubicSpline
     )
-        : type (GetGSLType(itype))
+        : itype(itype)
+        , type (GetGSLType(itype))
     {
         if( intervals==0 )
             throw std::invalid_argument("Interpolator1D: 'intervals' must be positive");
@@ -140,21 +201,31 @@ public:
             y[i] = f(x[i]);
         }
 
-        interpolation = interpolation_t (
-            gsl_spline_alloc(type, intervals+1),
-            [] (gsl_spline*g) {gsl_spline_free(g);}
-        );
+        if(type){
+            interpolation = interpolation_t (
+                gsl_spline_alloc(type, intervals+1),
+                [] (gsl_spline*g) {gsl_spline_free(g);}
+            );
 
-        if( auto code=gsl_spline_init (interpolation.get(), x.get(), y.get(), intervals+1); code!=GSL_SUCCESS )
-            throw std::runtime_error(std::string("Interpolator1D::Interpolator1D: gsl_spline_init ")+gsl_strerror(code));
+            if( auto code=gsl_spline_init (interpolation.get(), x.get(), y.get(), intervals+1); code!=GSL_SUCCESS )
+                throw std::runtime_error(std::string("Interpolator1D::Interpolator1D: gsl_spline_init ")+gsl_strerror(code));
 
-        acc = acc_t( gsl_interp_accel_alloc (), [] (gsl_interp_accel*a) {gsl_interp_accel_free(a);} );
+            acc = acc_t( gsl_interp_accel_alloc (), [] (gsl_interp_accel*a) {gsl_interp_accel_free(a);} );
+        }
+        if(itype==PiecewiseConstant){
+            iconst.reset(new InterpolatorPiecewiseConstant<double>(
+                std::span<double>(x.get(),intervals+1),
+                std::span<double>(y.get(),intervals+1)
+            ));
+        }
     }
 
     double operator () (double x) const {
-        if(!interpolation.get())
-            throw std::invalid_argument("Interpolator1D was not initialized");
-        return gsl_spline_eval(interpolation.get(),x,acc.get());
+        if(itype==PiecewiseConstant)
+            return (*iconst)(x);
+        if(interpolation.get())
+            return gsl_spline_eval(interpolation.get(),x,acc.get());
+        throw std::invalid_argument("Interpolator1D was not initialized");
     }
 
     double EvalOr (double x,double value_on_fail=NAN) const try {
@@ -165,16 +236,19 @@ public:
 
     Interpolator1D(Interpolator1D &&f) {
         interpolation = std::move(f.interpolation);
+        iconst = std::move(f.iconst);
         acc = std::move(f.acc);
+        type = f.type;
+        itype = f.itype;
     }
 
     Interpolator1D & operator = (const Interpolator1D &f) {
+        type = f.type;
+        itype = f.itype;
         if(f.interpolation.get()==nullptr) {
             interpolation.reset(nullptr);
             acc.reset(nullptr);
-            type = nullptr;
         } else {
-            type = f.type;
             interpolation = interpolation_t (
                 gsl_spline_alloc(type,f.interpolation->size),
                 [] (gsl_spline*g) {gsl_spline_free(g);}
@@ -185,31 +259,42 @@ public:
 
             acc = acc_t( gsl_interp_accel_alloc (), [] (gsl_interp_accel*a) {gsl_interp_accel_free(a);} );
         }
+        if(itype==PiecewiseConstant){
+            iconst.reset(new InterpolatorPiecewiseConstant<double>(*f.iconst));
+        }
         return *this;
     }
 
     Interpolator1D & operator = (Interpolator1D &&f) {
         if( &f!=this ) {
             interpolation = std::move(f.interpolation);
+            iconst = std::move(f.iconst);
             acc = std::move(f.acc);
             type = f.type;
+            itype = f.itype;
         }
         return *this;
     }
 
-    unsigned Size (void) const {
-        return interpolation ? interpolation.get()->size : 0;
-    }
-
-    std::pair<double,double> operator [] (unsigned i) const {
-        const auto s = interpolation.get();
-        if(s and i<s->size)
-            return {s->x[i],s->y[i]};
-        throw std::invalid_argument("Interpolator1D::operator[]");
-    }
+    // unsigned Size (void) const {
+    //     if(itype==PiecewiseConstant)
+    //         return iconst->xy.size();
+    //     return interpolation ? interpolation.get()->size : 0;
+    // }
+    //
+    // std::pair<double,double> operator [] (unsigned i) const {
+    //     const auto s = interpolation.get();
+    //     if(s and i<s->size)
+    //         return {s->x[i],s->y[i]};
+    //     throw std::invalid_argument("Interpolator1D::operator[]");
+    // }
 
     std::string Name (void) const {
-        return interpolation ? gsl_spline_name(interpolation.get()) : "(none)";
+        switch(itype){
+            case None: return "None";
+            case PiecewiseConstant: return "PiecewiseConstant";
+            default: return interpolation ? gsl_spline_name(interpolation.get()) : "None";
+        }
     }
 
     double Integral (double a,double b) const {
@@ -222,22 +307,37 @@ public:
         return result;
     }
 
-    std::span<double> GetX (void) const {return {interpolation->x,interpolation->size};}
-    std::span<double> GetY (void) const {return {interpolation->y,interpolation->size};}
+    std::span<double> GetX (void) const {
+        if(interpolation)
+            return {interpolation->x,interpolation->size};
+        else
+            throw std::invalid_argument(__PRETTY_FUNCTION__);
+    }
+    std::span<double> GetY (void) const {
+        if(interpolation)
+            return {interpolation->y,interpolation->size};
+        else
+            throw std::invalid_argument(__PRETTY_FUNCTION__);
+    }
 
     void Print (void) const {
-        printf("(x,y) %u points: ",Size());
-        for(unsigned i=0;i<Size();i++){
-            printf(" (%g,%g)",GetX()[i],GetY()[i]);
-        }
-        printf("\n");
+        // if(interpolation){
+        //     printf("(x,y) %u points: ",Size());
+        //     for(unsigned i=0;i<Size();i++){
+        //         printf(" (%g,%g)",GetX()[i],GetY()[i]);
+        //     }
+        //     printf("\n");
+        // }
     }
+
 
 protected:
 
+    Type itype;
     const gsl_interp_type *type;
     interpolation_t interpolation;
     acc_t acc;
+    std::shared_ptr<InterpolatorPiecewiseConstant<double>> iconst;
 
     friend std::ostream & operator << (std::ostream &os, const Interpolator1D &v);
 };

@@ -65,12 +65,13 @@ TEST_CASE("cubic"){
     g1.Print();
     g2.Print();
 
-    for(float x=vx.front(), dx=(vx.back()-vx.front())/10; x<=vx.back(); x+=dx){
+    for(float x=vx.front(), dx=0.5; x<=5; x+=dx){
         printf("x=%10g f(x)=%10g g1(x)=%10g g2(x)=%10g\n",x,f(x),g1.EvalOr(x),g2.EvalOr(x));
     }
 }
 
 TEST_CASE("compare-all"){
+    check_interpolation(Interpolator1D::Type::PiecewiseConstant);
     check_interpolation(Interpolator1D::Type::Linear);
     check_interpolation(Interpolator1D::Type::Polynomial);
     check_interpolation(Interpolator1D::Type::CubicSpline);
@@ -91,4 +92,24 @@ TEST_CASE("yconst"){
     for(float x=vx.front(), dx=(vx.back()-vx.front())/10; x<=vx.back(); x+=dx){
         printf("x=%10g g(x)=%10g\n",x,g(x));
     }
+}
+
+TEST_CASE("const"){
+    std::vector<float> vx {1,2}, vy {1,4};
+
+    InterpolatorPiecewiseConstant<float>
+        g(vx,vy);
+
+    // g.Print();
+
+    for(float x=-1; x<=10; x+=0.5){
+        printf("x=%10g g(x)=%10g\n",x,g(x));
+    }
+
+    g.Integral(-100,2);
+    g.Integral(0.5,2);
+    g.Integral(1.5,2);
+    g.Integral(1.9,2);
+
+    CHECK_THROWS_AS( g.Integral(1.9,2.1), std::exception);
 }
