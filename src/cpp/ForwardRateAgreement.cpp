@@ -5,38 +5,41 @@ float ForwardRateAgreement::Eval (const YieldCurve &curve) const {
     return -std::log(curve.GetDiscountFactor(start,start+length))/length;
 }
 
-// void ForwardRateAgreement::AddToCurve (YieldCurve &curve) const {
-//     curve.CheckMaturityIncreasing(GetMaturity());
-//     const bool empty = curve.GetYields().empty();
-//     const auto
-//         t1 = start,
-//         t2 = empty ? t1 : curve.GetMaturity(),
-//         t3 = GetMaturity();
-//     if( not (t1<=t2 and t2<t3))
-//         throw std::logic_error(fmt::format("{}: t1<=t2<t3: {} {} {}",__PRETTY_FUNCTION__,t1,t2,t3));
-//     const float
-//         r12 = curve.GetForwardRate(t1,t2),
-//         r13 = rate,
-//         t12 = (t2-t1).GetYearFraction(),
-//         t23 = (t3-t2).GetYearFraction(),
-//         t13 = t12+t23,
-//         r23 = (r13*t13-r12*t12)/t23;
-//
-//     curve.SetYield(t3,r23);
-//
-//     // the equation is r13*t13 = r12*t12+r23*t23
-//
-//
-//
-//     // const auto
-//     //     df1 = empty ? 1 : curve.GetDiscountFactor(t1),
-//     //     df2 = empty ? 1 : curve.GetDiscountFactor(t2);
-//     // fmt::print("t1={} t2={} t3={}\n",t1,t2,t3);
-//     // fmt::print("df1={} df2={}\n",df1,df2);
-//     // fmt::print("calc: {} {} {}\n",std::log(df2/df1),(t3-t1).ToDouble()*rate,(t3-t2).GetYearFraction());
-//     // curve.SetYield( t3,
-//     //     std::log(df2/df1) + (t3-t1).ToDouble()*rate
-//     //     /
-//     //     (t3-t2).GetYearFraction()
-//     // );
-// }
+void ForwardRateAgreement::AddToCurve (YieldCurve &curve) const {
+
+    if(curve.GetType()==math::Interpolator1D::None)
+        curve = math::Interpolator1D (
+            std::span<double>(),
+            std::span<double>(),
+            math::Interpolator1D::Type::PiecewiseConstant
+        );
+    if(curve.GetType()!=math::Interpolator1D::PiecewiseConstant)
+        throw std::invalid_argument(
+            "ForwardRateAgreement::AddToCurve(): only math::Interpolator1D::PiecewiseConstant type is supported."
+        );
+
+    const bool
+        empty_curve = curve.GetSize()==0;
+    const float
+        t1 = start,
+        t2 = empty_curve ? t1 : curve.GetMaturity(),
+        t3 = GetMaturity();
+
+    // curve.CheckMaturityIncreasing(GetMaturity());
+    // const bool empty = curve.GetYields().empty();
+    if( not (t1<=t2 and t2<t3))
+        throw std::invalid_argument(__PRETTY_FUNCTION__);
+
+    const float
+        r12 = empty_curve ? 0 : curve.GetForwardRate(t1,t2),
+        r13 = rate,
+        t12 = t2-t1,
+        t23 = t3-t2,
+        t13 = t12+t23,
+        r23 = (r13*t13-r12*t12)/t23;
+
+        // printf("tttt %g %g %g\n",t1,t2,t3);
+        // printf("r:  %g %g   %g %g %g\n",t12,t13,r12,r13,r23);
+
+    curve.SetYield(t3,r23);
+}

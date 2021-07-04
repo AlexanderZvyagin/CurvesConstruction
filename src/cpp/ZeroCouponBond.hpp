@@ -23,5 +23,5 @@ public:
     }
     float Eval (const YieldCurve &curve) const override;
     float Value (void) const override {return value;}
-    // void AddToCurve (YieldCurve &curve) const override;
+    virtual void AddToCurve (YieldCurve &curve) const;
 };

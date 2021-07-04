@@ -20,6 +20,7 @@ PYBIND11_MODULE(curves, m) {
 
     py::enum_<math::Interpolator1D::Type>(i1d, "Type")
         .value("None",                  math::Interpolator1D::Type::None)
+        .value("PiecewiseConstant",     math::Interpolator1D::Type::PiecewiseConstant)
         .value("Linear",                math::Interpolator1D::Type::Linear)
         .value("Polynomial",            math::Interpolator1D::Type::Polynomial)
         .value("CubicSpline",           math::Interpolator1D::Type::CubicSpline)
@@ -55,6 +56,7 @@ PYBIND11_MODULE(curves, m) {
         .def_readwrite("lflt", &Swap::lflt)
         .def("Eval", &Swap::Eval)
         .def("Value", &Swap::Value)
+        .def("AddToCurve",&Swap::AddToCurve)
         .def("__repr__", &Swap::About)
         // .def("__repr__", [] (const Swap &v) {return v.About();})
     ;
@@ -63,6 +65,7 @@ PYBIND11_MODULE(curves, m) {
         .def(py::init<float,float>())
         .def("Eval", &ZeroCouponBond::Eval)
         .def("Value", &ZeroCouponBond::Value)
+        .def("AddToCurve",&ZeroCouponBond::AddToCurve)
         .def("__repr__", &ZeroCouponBond::About)
     ;
 
@@ -70,6 +73,7 @@ PYBIND11_MODULE(curves, m) {
         .def(py::init<float,float,float>())
         .def("Eval", &ForwardRateAgreement::Eval)
         .def("Value", &ForwardRateAgreement::Value)
+        .def("AddToCurve",&ForwardRateAgreement::AddToCurve)
         .def("__repr__", &ForwardRateAgreement::About)
     ;
 
@@ -89,6 +93,7 @@ PYBIND11_MODULE(curves, m) {
         .def("Add",[] (YieldCurve &c,const ForwardRateAgreement &v) {return c.Add(v);})
         .def("Add",[] (YieldCurve &c,const Swap &v) {return c.Add(v);})
         .def("GetForwardRate", &YieldCurve::GetForwardRate)
+        .def("GetMaturity", &YieldCurve::GetMaturity)
         // .def("Add", &YieldCurve::Add)
         .def("Print", &YieldCurve::Print)
         .def("Build",
@@ -102,6 +107,7 @@ PYBIND11_MODULE(curves, m) {
             py::arg("itype") = math::Interpolator1D::Type::CubicSpline,
             py::arg("rate_extrapolation") = 0
         )
+        .def("GetInstruments",&YieldCurve::GetInstruments)
     ;
 
     // py::class_<math::Options> (m, "MathOptions")

@@ -14,7 +14,7 @@ public:
     virtual std::string About (void) const {return "";}
     virtual float Eval (const YieldCurve &curve) const {return NAN;}
     virtual float Value (void) const {return NAN;}
-    // virtual void AddToCurve (YieldCurve &curve) const = 0;
+    virtual void AddToCurve (YieldCurve &curve) const = 0;
 };
 
 inline

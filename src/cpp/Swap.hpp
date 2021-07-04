@@ -32,7 +32,9 @@ public:
     float GetMaturity (void) const override {return dt*n;}
     float Eval (const YieldCurve &curve) const override;
     float Value (void) const override {return rate;}
-    // void AddToCurve (YieldCurve &curve) const override {}
+    void AddToCurve (YieldCurve &curve) const override {
+        throw std::logic_error(__PRETTY_FUNCTION__);
+    }
 };
 
 class LegFloat : public Instrument {
@@ -65,7 +67,9 @@ public:
 
     float GetMaturity (void) const override {return dt*n;}
     float Eval (const YieldCurve &curve) const override;
-    // void AddToCurve (YieldCurve &curve) const override {}
+    void AddToCurve (YieldCurve &curve) const override {
+        throw std::logic_error(__PRETTY_FUNCTION__);
+    }
 };
 
 class Swap : public Instrument {
@@ -100,5 +104,5 @@ public:
     float Value (void) const override
         {return value;}
 
-    // void AddToCurve (YieldCurve &curve) const override;
+    void AddToCurve (YieldCurve &curve) const;
 };

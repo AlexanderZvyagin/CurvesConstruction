@@ -37,4 +37,6 @@ public:
     float Eval (const YieldCurve &curve) const override;
     float Value (void) const override {return rate;}
     // void AddToCurve (YieldCurve &curve) const override;
+
+    virtual void AddToCurve (YieldCurve &curve) const;
 };

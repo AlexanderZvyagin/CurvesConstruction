@@ -7,17 +7,22 @@ YieldCurve & YieldCurve::Add (const Instrument &x) {
     return *this;
 }
 
-// YieldCurve & YieldCurve::Build (void) {
-//     yields.clear();
-//     for(auto &[t,instr]: instruments){
-//         instr->AddToCurve(*this);
-//     }
-//     return *this;
-// }
+YieldCurve &
+YieldCurve::BuildPiecewiseConstant (void) {
+    *this = math::Interpolator1D();
+    for(auto [t,instr]: GetInstruments()) {
+        instr->AddToCurve(*this);
+    }
+    return *this;
+}
 
-YieldCurve & YieldCurve::Build (math::Interpolator1D::Type itype,float yield_to_infinity) {
-
-    // printf("%s itype=%d\n",__PRETTY_FUNCTION__,(int)itype);
+YieldCurve &
+YieldCurve::Build (
+    math::Interpolator1D::Type itype,
+    float yield_to_infinity
+) {
+    if(itype==math::Interpolator1D::Type::PiecewiseConstant)
+        return BuildPiecewiseConstant();
 
     // grid on time
     std::vector<double> vx {0}; // always start with t=0 point
@@ -79,7 +84,7 @@ YieldCurve & YieldCurve::Build (math::Interpolator1D::Type itype,float yield_to_
         opts
     );
 
-    std::cout << r << "\n";
+    // std::cout << r << "\n";
     if(!r) throw std::runtime_error(r.error_text.value());
 
     std::vector<double> vy;
@@ -99,12 +104,19 @@ YieldCurve & YieldCurve::Build (math::Interpolator1D::Type itype,float yield_to_
     return *this;
 }
 
-
 void YieldCurve::Print(void) const {
-    printf("YieldCurve interpolation type: %s\n",Name().c_str());
+    printf("YieldCurve interpolation type: %s size=%d\n",Name().c_str(),GetSize());
     // for( auto [t,y]: yields) {
     //     printf("  t={}  yield={}\n",t,y);
     // }
+
+    if(iconst){
+        printf("PiecewiseConstant (time,yield)=[ ");
+        for(auto &[t,y]: iconst->GetXY() ){
+            printf("(%g,%g) ",t,y);
+        }
+        printf("]\n");
+    }
 
     for(auto [t,instr]: GetInstruments()) {
         if(!instr) continue;

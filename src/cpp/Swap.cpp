@@ -24,32 +24,38 @@ float LegFloat::Eval (const YieldCurve &discount_curve) const {
     return rv*dt;
 }
 
-// void Swap::AddToCurve (YieldCurve &curve) const {
-//     auto t = GetMaturity();
-//     curve.CheckMaturityIncreasing(t);
-//     // FIXME: initial value?!
-//     const float rate_minmax = 0.5; // rates range: -50%...+50%
-//     auto result = math::solver(
-//         [&] (double x) {
-//             curve.SetYield(t,x);
-//             auto v =  Eval(curve) - PV();
-//             debug("{} x={} v={}",__PRETTY_FUNCTION__,x,v);
-//             return v;
-//         },
-//         math::Parameter(0,0.01,-rate_minmax,rate_minmax),
-//         math::Options()
-//     );
-//     if(!result.IsGood())
-//         throw std::runtime_error( fmt::format(
-//             "{} {}",
-//             __PRETTY_FUNCTION__,result.GetError()
-//         ));
-//     curve.SetYield(t,result.x.at(0));
-// }
+void Swap::AddToCurve (YieldCurve &curve) const {
+    if(curve.GetType()==math::Interpolator1D::None)
+        curve = math::Interpolator1D (
+            std::span<double>(),
+            std::span<double>(),
+            math::Interpolator1D::Type::PiecewiseConstant
+        );
+    if(curve.GetType()!=math::Interpolator1D::PiecewiseConstant)
+        throw std::invalid_argument(
+            "Swap::AddToCurve(): only math::Interpolator1D::PiecewiseConstant type is supported."
+        );
 
-// When a swap is added to the curve, there are several possible
-// configuarations regartding the float leg:
-// (1) the float leg is independent from the discouning curve
-//     (multiple curve approach)
-//     => no extra code is needed in this case!
-// (2) single curve: the float leg is the same as the discount leg
+    if(lflt.curve!=&curve)
+        throw std::invalid_argument(
+            "Swap::AddToCurve(): single curve approach is coded."
+        );
+
+    float
+        t = GetMaturity(),
+        rate_minmax = 0.2; // FIXME: constant in the code
+    auto result = math::solver(
+        [&] (double x) {
+            curve.SetYield(t,x);
+            auto v =  Eval(curve) - Value();
+            // printf("%s x=%g v=%g\n",__PRETTY_FUNCTION__,x,v);
+            return v;
+        },
+        math::Parameter(0,0.01,-rate_minmax,rate_minmax),
+        math::Options()
+    );
+
+    if(!result.IsGood())
+        throw std::runtime_error(result.GetError());
+    curve.SetYield(t,result.x.at(0));
+}

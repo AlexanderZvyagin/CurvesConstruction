@@ -31,7 +31,7 @@ public:
 
     T operator () (T x) const {
         if(xy.empty())
-            throw std::runtime_error(__PRETTY_FUNCTION__);
+            throw std::runtime_error("InterpolatorPiecewiseConstant::operator(): empty interpolator");
         auto it = xy.upper_bound(x);
         if(it==xy.end()) return xy.rbegin()->second;
         it--;
@@ -66,6 +66,8 @@ public:
         return integral;
     }
 
+    std::map<T,T>       & GetXY (void)       {return xy;}
+    std::map<T,T> const & GetXY (void) const {return xy;}
 };
 
 // https://www.gnu.org/software/gsl/doc/html/interp.html#c.gsl_interp_type
@@ -245,10 +247,11 @@ public:
     Interpolator1D & operator = (const Interpolator1D &f) {
         type = f.type;
         itype = f.itype;
-        if(f.interpolation.get()==nullptr) {
-            interpolation.reset(nullptr);
-            acc.reset(nullptr);
-        } else {
+        acc.reset(nullptr);
+        interpolation.reset(nullptr);
+        iconst.reset(static_cast<InterpolatorPiecewiseConstant<double>*>(nullptr));
+
+        if(f.interpolation) {
             interpolation = interpolation_t (
                 gsl_spline_alloc(type,f.interpolation->size),
                 [] (gsl_spline*g) {gsl_spline_free(g);}
@@ -297,7 +300,24 @@ public:
         }
     }
 
+    std::string GetTypeName (void) const {
+        switch(itype){
+            case None:                  return "NONE";
+            case PiecewiseConstant:     return "PiecewiseConstant";
+            case Linear:                return "Linear";
+            case Polynomial:            return "Polynomial";
+            case CubicSpline:           return "CubicSpline";
+            case CubicSplinePeriodic:   return "CubicSplinePeriodic";
+            case Akima:                 return "Akima";
+            case AkimaPeriodic:         return "AkimaPeriodic";
+            case Steffen:               return "Steffen";
+            default: throw std::invalid_argument(__PRETTY_FUNCTION__);
+        }
+    }
+
     double Integral (double a,double b) const {
+        if(itype==Type::PiecewiseConstant)
+            return iconst->Integral(a,b);
         if(!interpolation)
             throw std::invalid_argument("Interpolator1D::Integral(): empty curve");
         double result;
@@ -305,6 +325,14 @@ public:
         if(status!=GSL_SUCCESS)
             throw std::runtime_error(gsl_strerror(status));
         return result;
+    }
+
+    int GetSize (void) const {
+        if(interpolation)
+            return interpolation->size;
+        if(iconst)
+            return iconst->GetXY().size();
+        return 0;
     }
 
     std::span<double> GetX (void) const {
@@ -330,6 +358,7 @@ public:
         // }
     }
 
+    Type GetType (void) const {return itype;}
 
 protected:
 
