@@ -76,20 +76,20 @@ YieldCurve::Build (
     };
 
     math::Options opts;
-    opts.iters = 10000;
-    auto r = math::minimize(
+    opts.iters = 20000;
+    math::Result r = math::minimize(
         func,
         pars,
         opts
     );
 
     // std::cout << r << "\n";
-    if(!r) throw std::runtime_error(r.error_text);
+    if(!r) throw std::runtime_error(r.GetError());
 
     std::vector<double> vy;
-    for( auto y: r.x)
-    // for(std::vector<double>::const_iterator it=r.x.cbegin(); it!=r.x.cend(); it++)
-        vy.push_back(y);
+    // for( auto y: r.x)
+    for(std::vector<math::Parameter>::const_iterator it=r.x.cbegin(); it!=r.x.cend(); it++)
+        vy.push_back(it->value);
     vy.push_back(yield_to_infinity);
 
     if(vx.size()!=vy.size())
@@ -102,17 +102,21 @@ YieldCurve::Build (
 
 void YieldCurve::Print(void) const {
     printf("YieldCurve interpolation type: %s size=%d\n",Name().c_str(),GetSize());
+
+
+    std::cout << static_cast<math::Interpolator1D>(*this) << "\n";
+
     // for( auto [t,y]: yields) {
     //     printf("  t={}  yield={}\n",t,y);
     // }
 
-    if(iconst){
-        printf("PiecewiseConstant (time,yield)=[ ");
-        for(std::map<double,double>::const_iterator it=iconst->GetXY().cbegin(); it!=iconst->GetXY().cend(); it++ ){
-            printf("(%g,%g) ",it->first,it->second);
-        }
-        printf("]\n");
-    }
+    // if(iconst){
+    //     printf("PiecewiseConstant (time,yield)=[ ");
+    //     for(std::map<double,double>::const_iterator it=iconst->GetXY().cbegin(); it!=iconst->GetXY().cend(); it++ ){
+    //         printf("(%g,%g) ",it->first,it->second);
+    //     }
+    //     printf("]\n");
+    // }
 
     // for(auto [t,instr]: GetInstruments()) {
     for(std::map <float,std::shared_ptr<Instrument>>::const_iterator it=instruments.cbegin(); it!=instruments.cend(); it++){

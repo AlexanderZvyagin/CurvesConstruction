@@ -46,8 +46,8 @@ void check_interpolation(Interpolator1D::Type type) try {
         g2(vx,vy,type);
     printf("Interpolation type: %s\n",g1.Name().c_str());
 
-    g1.Print();
-    g2.Print();
+    std::cout << g1 << "\n";
+    std::cout << g2 << "\n";
 
     for(float x=vx.front(), dx=(vx.back()-vx.front())/10; x<=vx.back(); x+=dx){
         printf("x=%10g f(x)=%10g g1(x)=%10g g2(x)=%10g\n",x,f(x),g1.EvalOr(x),g2.EvalOr(x));
@@ -73,7 +73,7 @@ TEST_CASE("yconst"){
     Interpolator1D
         g(vx,vy,Interpolator1D::Type::Linear);
 
-    g.Print();
+    std::cout << g << "\n";
 
     for(float x=vx.front(), dx=(vx.back()-vx.front())/10; x<=vx.back(); x+=dx){
         printf("x=%10g g(x)=%10g\n",x,g(x));
@@ -89,7 +89,7 @@ TEST_CASE("const"){
     // g.Print();
 
     for(float x=-1; x<=10; x+=0.5){
-        printf("x=%10g g(x)=%10g\n",x,g(x));
+        printf("x=%10g g(x)=%10g\n",x,g.EvalOr(x,NAN));
     }
 
     g.Integral(-100,2);

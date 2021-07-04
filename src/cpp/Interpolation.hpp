@@ -31,12 +31,10 @@ public:
     }
 
     T operator () (T x) const {
-        if(xy.empty())
-            throw std::runtime_error("InterpolatorPiecewiseConstant::operator(): empty interpolator");
-        auto it = xy.upper_bound(x);
-        if(it==xy.end()) return xy.rbegin()->second;
-        it--;
-        return it==xy.end() ? NAN: it->second;
+        typename std::map<T,T>::const_iterator it = xy.lower_bound(x);
+        if(it==xy.end())
+            throw std::invalid_argument(__PRETTY_FUNCTION__);
+        return it->second;
     }
 
     T EvalOr (T x,T value_on_fail=NAN) const try {
@@ -46,30 +44,53 @@ public:
     }
 
     T Integral (T a,T b) const {
-        auto it = xy.upper_bound(a);
-        // printf("Integral from %g to %g.  First t=%g\n",a,b,it->first);
+        typename std::map<T,T>::const_iterator it = xy.upper_bound(a);
         T x {a}, integral {0};
 
         while(x<b){
-            if(it==xy.end())
+            if(it==xy.end()){
+                printf("%s Integration range [%g,%g] xy.size=%d x=%g\n",__PRETTY_FUNCTION__,a,b,(int)xy.size(),x);
                 throw std::logic_error(__PRETTY_FUNCTION__);
-            // printf("x=[%g,%g] dx=%g y=%g",x,it->first,it->first-x,it->second);
+            }
             float dx = it->first - x;
             x = it->first;
             if(dx<0) break;
             integral += dx*it->second;
             it++;
-            // printf(" %s\n",it==xy.end()?"end":"cont");
         }
-
-        // printf("Integral = %g\n",integral);
-
         return integral;
     }
 
     std::map<T,T>       & GetXY (void)       {return xy;}
     std::map<T,T> const & GetXY (void) const {return xy;}
+
+    std::vector<T> GetX (void) const {
+        std::vector<T> v;
+        for(typename std::map<T,T>::const_iterator it = xy.begin(); it!=xy.end(); it++)
+            v.push_back(it->first);
+        return v;
+    }
+
+    std::vector<T> GetY (void) const {
+        std::vector<T> v;
+        for(typename std::map<T,T>::const_iterator it = xy.begin(); it!=xy.end(); it++)
+            v.push_back(it->second);
+        return v;
+    }
+
 };
+
+template <typename T>
+inline
+std::ostream &
+operator << (std::ostream &os, const InterpolatorPiecewiseConstant<T> &v) {
+    std::map<T,T> const &xy = v.GetXY();
+    os << xy.size() <<  " points (x,y)=[ ";
+    for(typename std::map<T,T>::const_iterator it=xy.begin(); it!=xy.end(); it++)
+        os << "(" << it->first << "," << it->second << ") ";
+    os << "]";
+    return os;
+}
 
 // https://www.gnu.org/software/gsl/doc/html/interp.html#c.gsl_interp_type
 // gsl_interp_type *gsl_interp_linear
@@ -340,24 +361,16 @@ public:
     std::vector<double> GetX (void) const {
         if(interpolation)
             return std::vector<double>(interpolation->x,interpolation->x+interpolation->size);
-        else
-            throw std::invalid_argument(__PRETTY_FUNCTION__);
+        if(iconst)
+            return iconst->GetX();
+        return std::vector<double>();
     }
     std::vector<double> GetY (void) const {
         if(interpolation)
             return std::vector<double>(interpolation->y,interpolation->y+interpolation->size);
-        else
-            throw std::invalid_argument(__PRETTY_FUNCTION__);
-    }
-
-    void Print (void) const {
-        // if(interpolation){
-        //     printf("(x,y) %u points: ",Size());
-        //     for(unsigned i=0;i<Size();i++){
-        //         printf(" (%g,%g)",GetX()[i],GetY()[i]);
-        //     }
-        //     printf("\n");
-        // }
+        if(iconst)
+            return iconst->GetY();
+        return std::vector<double>();
     }
 
     Type GetType (void) const {return itype;}
@@ -368,7 +381,7 @@ protected:
     const gsl_interp_type *type;
     interpolation_t interpolation;
     acc_t acc;
-    std::shared_ptr<InterpolatorPiecewiseConstant<double>> iconst;
+    std::shared_ptr<InterpolatorPiecewiseConstant<double> > iconst;
 
     friend std::ostream & operator << (std::ostream &os, const Interpolator1D &v);
 };
@@ -376,14 +389,10 @@ protected:
 inline
 std::ostream &
 operator << (std::ostream &os, const Interpolator1D &v) {
-    const gsl_spline *s = v.interpolation.get();
-    if(s) {
-    //     os << "(Interpolator1D " << s->size << " points "
-    //        << "x=[" << s->x [0] << "," << s->x [s->size-1] << "]) "
-    //        << "y=[" << s->y [0] << "," << s->y [s->size-1] << "])";
-    } else {
-        os << "(Interpolator1D uninitialized)";
-    }
+    std::vector<double> x = v.GetX(), y = v.GetY();
+    os << v.GetTypeName() << " " << v.GetSize() << " points (x,y) = ";
+    for(int i=0; i<v.GetSize(); i++)
+        os << "(" << x.at(i) << "," << y.at(i) << ") ";
     return os;
 }
 

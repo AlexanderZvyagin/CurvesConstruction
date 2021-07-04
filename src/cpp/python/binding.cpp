@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/operators.h>
@@ -50,10 +52,19 @@ PYBIND11_MODULE(curves, m) {
         // .def("__repr__", [] (const LegFloat &v) {return v.About();})
     ;
 
+    // py::class_<Instrument> (m, "Instrument")
+    //     .def(py::init<>())
+    //     .def("Eval", &Swap::Eval)
+    //     .def("Value", &Swap::Value)
+    //     .def("AddToCurve",&Swap::AddToCurve)
+    //     .def("__repr__", &Swap::About)
+    // ;
+
     py::class_<Swap> (m, "Swap")
         .def(py::init<>())
         .def_readwrite("lfix", &Swap::lfix)
         .def_readwrite("lflt", &Swap::lflt)
+        .def("GetMaturity", &Swap::GetMaturity)
         .def("Eval", &Swap::Eval)
         .def("Value", &Swap::Value)
         .def("AddToCurve",&Swap::AddToCurve)
@@ -63,6 +74,7 @@ PYBIND11_MODULE(curves, m) {
 
     py::class_<ZeroCouponBond> (m, "ZeroCouponBond")
         .def(py::init<float,float>())
+        .def("GetMaturity", &ZeroCouponBond::GetMaturity)
         .def("Eval", &ZeroCouponBond::Eval)
         .def("Value", &ZeroCouponBond::Value)
         .def("AddToCurve",&ZeroCouponBond::AddToCurve)
@@ -71,6 +83,7 @@ PYBIND11_MODULE(curves, m) {
 
     py::class_<ForwardRateAgreement> (m, "ForwardRateAgreement")
         .def(py::init<float,float,float>())
+        .def("GetMaturity", &ForwardRateAgreement::GetMaturity)
         .def("Eval", &ForwardRateAgreement::Eval)
         .def("Value", &ForwardRateAgreement::Value)
         .def("AddToCurve",&ForwardRateAgreement::AddToCurve)
@@ -79,7 +92,7 @@ PYBIND11_MODULE(curves, m) {
 
     py::class_<YieldCurve> (m, "YieldCurve")
         .def(py::init<>())
-        .def("__repr__", [] (const YieldCurve &c) {return "YieldCurve";})
+        .def("__repr__", [] (const YieldCurve &c) {std::stringstream s; s<<c; return s.str();})
         .def("__call__", [] (const YieldCurve &c,float v) {return c(v);})
         .def("SetYield", &YieldCurve::SetYield)
         .def("GetDiscountFactor", [] (const YieldCurve &c,float t1) {return c.GetDiscountFactor(t1);})
@@ -89,7 +102,13 @@ PYBIND11_MODULE(curves, m) {
         .def("Add",[] (YieldCurve &c,const Swap &v) {return c.Add(v);})
         .def("GetForwardRate", &YieldCurve::GetForwardRate)
         .def("GetMaturity", &YieldCurve::GetMaturity)
-        .def("Print", &YieldCurve::Print)
+        // .def("Print", &YieldCurve::Print)
+        .def("Integral", &YieldCurve::Integral)
+        .def("GetType", &YieldCurve::GetType)
+        .def("GetTypeName", &YieldCurve::GetTypeName)
+        .def("GetSize", &YieldCurve::GetSize)
+        .def("GetX", &YieldCurve::GetX)
+        .def("GetY", &YieldCurve::GetY)
         .def("Build",
             [] (
                 YieldCurve &c,
@@ -101,7 +120,14 @@ PYBIND11_MODULE(curves, m) {
             py::arg("itype") = math::Interpolator1D::Type::CubicSpline,
             py::arg("rate_extrapolation") = 0
         )
-        .def("GetInstruments",&YieldCurve::GetInstruments)
+        .def("GetInstruments",
+            [] (const YieldCurve &c){
+                std::vector<std::unique_ptr<Instrument>> v;
+                for(std::map <float,std::shared_ptr<Instrument>>::const_iterator it=c.GetInstruments().cbegin(); it!=c.GetInstruments().cend(); it++)
+                    v.emplace_back(it->second->Clone());
+                return v;
+            }
+        )
     ;
 
     // py::class_<math::Options> (m, "MathOptions")
