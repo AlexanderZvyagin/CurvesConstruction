@@ -28,26 +28,26 @@ Result solver (
             [] (gsl_root_fsolver *p) {gsl_root_fsolver_free(p);});
     gsl_root_fsolver_set (s.get(), &gsl_f, x.min, x.max);
 
-    const auto has_resources = [&] (void) -> bool {return opts.limit ? (result.calls.value()<opts.limit.value()) : true;};
+    const auto has_resources = [&] (void) -> bool {return opts.limit ? (result.calls<opts.limit) : true;};
 
     result.code  = GSL_CONTINUE;
-    while (result.code.value()==GSL_CONTINUE and has_resources()) {
-        result.calls.value() ++;
+    while (result.code==GSL_CONTINUE and has_resources()) {
+        result.calls ++;
         gsl_root_fsolver_iterate (s.get());
         x.min = gsl_root_fsolver_x_lower (s.get());
         x.max = gsl_root_fsolver_x_upper (s.get());
         result.code = gsl_root_test_interval (
             x.min, x.max,
-            opts.eps_abs.value(), opts.eps_rel.value()
+            opts.eps_abs, opts.eps_rel
         );
     }
 
     x.value = gsl_root_fsolver_root (s.get());
     x.error = x.max - x.min;
-    result.calls.value() ++;
+    result.calls ++;
     result.value = f(x.value,data);
     if(result.code!=GSL_SUCCESS)
-        result.SetError(gsl_strerror(result.code.value()));
+        result.SetError(gsl_strerror(result.code));
 
     return result;
 }
@@ -62,7 +62,7 @@ Result integral (
         gsl_integration_workspace,
         std::function <void(gsl_integration_workspace*)>
     > workspace (
-        gsl_integration_workspace_alloc (opts.limit.value()),
+        gsl_integration_workspace_alloc (opts.limit),
         [] (gsl_integration_workspace *w) {gsl_integration_workspace_free(w);}
     );
     gsl_function gsl_f {f,pars};
@@ -72,12 +72,12 @@ Result integral (
         &gsl_f,
         points.data(),
         points.size(),
-        opts.eps_abs.value(),
-        opts.eps_rel.value(),
-        opts.limit.value(),
+        opts.eps_abs,
+        opts.eps_rel,
+        opts.limit,
         workspace.get(),
-        &r.value.value(),
-        &r.error.value()
+        &r.value,
+        &r.error
     );
     return r;
 }

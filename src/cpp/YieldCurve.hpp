@@ -21,8 +21,8 @@ public:
     ) {}
 
     YieldCurve (
-        std::span<double> vx,
-        std::span<double> vy,
+        const std::vector<double> &vx,
+        const std::vector<double> &vy,
         math::Interpolator1D::Type itype
     )
         : math::Interpolator1D (vx,vy,itype)

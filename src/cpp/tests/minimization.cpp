@@ -13,7 +13,7 @@ TEST_CASE("basic"){
 
     std::vector<Parameter> pars {Parameter(0,0.1,-10,10)};
 
-    auto func = [] (const std::span<double> pars) {
+    auto func = [] (const std::vector<double> &pars) {
         if(pars.size()!=1) throw std::invalid_argument("bad args");
         return std::pow(pars[0]-2.331,2);
     };
@@ -34,7 +34,7 @@ TEST_CASE("fit2"){
         Parameter(0,0.1,-10,10)
     };
 
-    auto func = [] (const std::span<double> pars) {
+    auto func = [] (const std::vector<double> &pars) {
         if(pars.size()!=2) throw std::invalid_argument("bad args");
         return std::pow(pars[0]+1.331,2) + std::pow(pars[1]-2.331,4);
     };

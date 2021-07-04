@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <optional>
 #include <cmath>
 #include <vector>
 #include <string>
@@ -31,56 +30,54 @@ struct Parameter {
 
 struct Options {
     Options (void) : eps_abs(1e-6), eps_rel(1e-5), limit(10000), iters(100) {}
-    std::optional <double> eps_abs, eps_rel;
-    std::optional <unsigned> limit;
-    std::optional <unsigned> iters;
+    double eps_abs, eps_rel;
+    unsigned limit;
+    unsigned iters;
 };
 
 inline
 std::ostream & operator << (std::ostream &os, const Options &v) {
     os << "(math options: eps_abs="
-       << v.eps_abs.value_or(NAN)
+       << v.eps_abs
        << " eps_rel="
-       << v.eps_rel.value_or(NAN)
+       << v.eps_rel
        << ")";
     return os;
 }
 
 struct Result {
-    std::optional <double> value, error;
-    std::optional <unsigned> calls;
-    std::optional <int> code;
+    double value {NAN}, error {NAN};
+    unsigned calls;
+    int code;
     std::vector <Parameter> x;
-    std::optional <std::string> error_text;
+    std::string error_text;
 
-    bool IsGood (void) const {return !error_text;}
+    bool IsGood (void) const {return error_text.empty();}
+    operator bool (void) const {return IsGood();}
     void SetError (std::string error) {error_text=error;}
-    std::string GetError (void) const {return error_text.value_or("");}
+    std::string GetError (void) const {return error_text;}
 
     double ValueOr (const std::string &msg) {
-        if(value) return value.value();
-        throw std::runtime_error(code?gsl_strerror(code.value()):"");
+        if(!std::isnan(value)) return value;
+        throw std::runtime_error(gsl_strerror(code));
     }
 
-    double ValueOr (double v) {
-        return value.value_or(v);
+    double ValueOr (double defval) {
+        return std::isnan(value) ? defval : value;
     }
-
-    operator bool (void) const {return !error_text.has_value();}
 };
 
 inline
 std::ostream & operator << (std::ostream &os, const Result &r) {
-    if(r.value) os << "value=" << r.value.value() << " ";
-    if(r.error) os << "error=" << r.error.value() << " ";
-    if(r.code) os << "code=" << r.code.value() << " ";
-    if(r.error_text) os << "error=\"" << r.error_text.value() << "\" ";
+    os << "value=" << r.value << " ";
+    os << "error=" << r.error << " ";
+    os << "code=" << r.code << " ";
+    os << "error=\"" << r.error_text << "\" ";
     if(!r.x.empty()){
         os << "x=[";
         for(auto x: r.x) os << x << ",";
         os << "]";
     }
-
     return os;
 }
 
@@ -110,30 +107,8 @@ Result integral (
     std::vector <double> points,
     Options opts = {}
 ){
-    Wrapper w {f};
+    Wrapper<F> w (f);
     return integral (&w.Call,&w,points,opts);
-}
-
-inline auto
-make_normal_PDF (
-    double mean=0,
-    double sigma=1
-){
-    return [=] (double x) -> double {
-        return 1/(sigma*std::sqrt(2*M_PI)) * std::exp (-std::pow((x-mean)/sigma,2)/2);
-    };
-}
-
-inline double
-normal_PDF (double x) {
-    return 1/std::sqrt(2*M_PI) * std::exp (-x*x/2);
-}
-
-inline auto
-normal_CDF (
-    double x
-){
-    return (std::erf(x/std::sqrt(2))+1) / 2;
 }
 
 inline
@@ -153,23 +128,6 @@ linspace (unsigned n,double min,double max) {
     }
 }
 
-template <typename F>
-auto derivative1 (F f,double h) {
-    return [=] (double x) {return (f(x+h/2) - f(x-h/2)) / h;};
-}
-
-template <typename F>
-auto derivative2 (F f,double h) {
-    return [=] (double x) {
-        const double
-            m = f (x-h),
-            z = f (x  ),
-            p = f (x+h),
-            d = (m - 2*z + p) / std::pow(h,2);
-        return d;
-    };
-}
-
 Result solver (
     double (*f) (double, void*),
     void *data,
@@ -183,7 +141,7 @@ Result solver (
     const Parameter &p,
     const Options &opts = Options {}
 ){
-    Wrapper w {f};
+    Wrapper<F> w {f};
     return solver (&w.Call, &w, p, opts);
 }
 

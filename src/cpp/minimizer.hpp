@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <cstdio>
-#include <span>
 
 #include "math.hpp"
 #include <gsl/gsl_multimin.h>
@@ -13,7 +12,7 @@ template <typename F>
 struct WrapperForMinimizer {
     static
     double for_gsl_minimization (const gsl_vector *v, void *data) {
-        return reinterpret_cast <WrapperForMinimizer*> (data) -> cpp_f(std::span<double>(v->data,v->size));
+        return reinterpret_cast <WrapperForMinimizer*> (data) -> cpp_f(std::vector<double>(v->data,v->data+v->size));
     }
     F cpp_f;
     WrapperForMinimizer (F f) : cpp_f(f) {}
@@ -25,7 +24,7 @@ Result minimize (
     const std::vector<Parameter> &pars,
     const Options &opts
 ){
-    WrapperForMinimizer w(f);
+    WrapperForMinimizer<F> w(f);
 
     gsl_multimin_function fmw;
     fmw.n = pars.size();
@@ -66,15 +65,15 @@ Result minimize (
         if(status!=GSL_SUCCESS)
             break;
         double size = gsl_multimin_fminimizer_size (s.get());
-        status = gsl_multimin_test_size (size, opts.eps_abs.value());
-    } while (status == GSL_CONTINUE && iter < opts.iters.value());
+        status = gsl_multimin_test_size (size, opts.eps_abs);
+    } while (status == GSL_CONTINUE && iter < opts.iters);
 
     // if(status!=GSL_SUCCESS)
     //     throw std::runtime_error(gsl_strerror(status));
 
     Result r;
-    for(auto x: std::span{s->x->data,s->x->size})
-        r.x.push_back(Parameter(x));
+    for(size_t i=0; i<s->x->size; i++)
+        r.x.push_back(Parameter(s->x->data[i]));
     r.calls = iter;
     r.code = status;
     if(status!=GSL_SUCCESS)

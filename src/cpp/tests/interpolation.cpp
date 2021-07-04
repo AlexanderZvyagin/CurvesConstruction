@@ -38,7 +38,11 @@ void check_interpolation(Interpolator1D::Type type) try {
     for(auto x: vx) vy.push_back(f(x));
 
     Interpolator1D
-        g1(std::span<double>{vx.data(),vx.size()-1},std::span<double>{vy.data(),vy.size()-1},type),
+        g1(
+            std::vector<double>(vx.data(),vx.data()+vx.size()-1),
+            std::vector<double>(vy.data(),vy.data()+vy.size()-1),
+            type
+        ),
         g2(vx,vy,type);
     printf("Interpolation type: %s\n",g1.Name().c_str());
 
@@ -50,24 +54,6 @@ void check_interpolation(Interpolator1D::Type type) try {
     }
 } catch (const std::exception &e) {
     printf("Error: %s\n",e.what());
-}
-
-TEST_CASE("cubic"){
-    auto
-        f = [] (double x) {return x*x;};
-    std::vector<double> vx {1,2,3,4}, vy;
-    for(auto x: vx) vy.push_back(f(x));
-
-    Interpolator1D
-        g1(std::span<double>{vx.data(),vx.size()-1},std::span<double>{vy.data(),vy.size()-1},Interpolator1D::Type::CubicSpline),
-        g2(vx,vy,Interpolator1D::Type::CubicSpline);
-
-    g1.Print();
-    g2.Print();
-
-    for(float x=vx.front(), dx=0.5; x<=5; x+=dx){
-        printf("x=%10g f(x)=%10g g1(x)=%10g g2(x)=%10g\n",x,f(x),g1.EvalOr(x),g2.EvalOr(x));
-    }
 }
 
 TEST_CASE("compare-all"){

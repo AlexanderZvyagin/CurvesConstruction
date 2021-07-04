@@ -27,8 +27,8 @@ float LegFloat::Eval (const YieldCurve &discount_curve) const {
 void Swap::AddToCurve (YieldCurve &curve) const {
     if(curve.GetType()==math::Interpolator1D::None)
         curve = math::Interpolator1D (
-            std::span<double>(),
-            std::span<double>(),
+            std::vector<double>(),
+            std::vector<double>(),
             math::Interpolator1D::Type::PiecewiseConstant
         );
     if(curve.GetType()!=math::Interpolator1D::PiecewiseConstant)

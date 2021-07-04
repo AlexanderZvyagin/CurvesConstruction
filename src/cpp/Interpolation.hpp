@@ -6,7 +6,8 @@
 #include <functional>
 #include <stdexcept>
 #include <cstdio>
-#include <span>
+#include <vector>
+#include <iostream>
 
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_errno.h>
@@ -22,8 +23,8 @@ protected:
 public:
 
     InterpolatorPiecewiseConstant(
-        std::span<T> x,
-        std::span<T> y
+        const std::vector<T> &x,
+        const std::vector<T> &y
     ) {
         for(unsigned i=0; i<std::min(x.size(),y.size()); i++)
             xy[x[i]] = y[i];
@@ -151,21 +152,22 @@ public:
     Interpolator1D(const Interpolator1D &f) : Interpolator1D() {*this = f;}
 
     Interpolator1D(
-        std::span<double> x,
-        std::span<double> y,
+        const std::vector<double> &x,
+        const std::vector<double> &y,
         Type itype
     )
         : itype(itype)
         , type (GetGSLType(itype))
     {
         if(type){
-            const auto size = std::min (x.size(), y.size());
+            const unsigned size = std::min (x.size(), y.size());
             interpolation = interpolation_t (
                 gsl_spline_alloc(type, size),
                 [] (gsl_spline *g) {gsl_spline_free(g);}
             );
 
-            if( auto code=gsl_spline_init (interpolation.get(), x.data(), y.data(), size); code!=GSL_SUCCESS )
+            int code=gsl_spline_init (interpolation.get(), x.data(), y.data(), size);
+            if(code!=GSL_SUCCESS)
                 throw std::runtime_error(std::string("Interpolator1D::Interpolator1D: gsl_spline_init ")+gsl_strerror(code));
 
             acc = acc_t( gsl_interp_accel_alloc (), [] (gsl_interp_accel*a) {gsl_interp_accel_free(a);} );
@@ -188,9 +190,11 @@ public:
         if( intervals==0 )
             throw std::invalid_argument("Interpolator1D: 'intervals' must be positive");
 
-        std::unique_ptr<double[]>
-            x( new double[intervals+1]),
-            y( new double[intervals+1]);
+        std::vector<double> x(intervals+1,double(0)), y(intervals+1,double(0));
+
+        // std::unique_ptr<double[]>
+        //     x( new double[intervals+1]),
+        //     y( new double[intervals+1]);
 
         x[0] = range.first;
         y[0] = f(x[0]);
@@ -209,17 +213,14 @@ public:
                 [] (gsl_spline*g) {gsl_spline_free(g);}
             );
 
-            if( auto code=gsl_spline_init (interpolation.get(), x.get(), y.get(), intervals+1); code!=GSL_SUCCESS )
+            int code=gsl_spline_init (interpolation.get(), x.data(), y.data(), intervals+1);
+            if(code!=GSL_SUCCESS)
                 throw std::runtime_error(std::string("Interpolator1D::Interpolator1D: gsl_spline_init ")+gsl_strerror(code));
 
             acc = acc_t( gsl_interp_accel_alloc (), [] (gsl_interp_accel*a) {gsl_interp_accel_free(a);} );
         }
-        if(itype==PiecewiseConstant){
-            iconst.reset(new InterpolatorPiecewiseConstant<double>(
-                std::span<double>(x.get(),intervals+1),
-                std::span<double>(y.get(),intervals+1)
-            ));
-        }
+        if(itype==PiecewiseConstant)
+            iconst.reset(new InterpolatorPiecewiseConstant<double>(x,y));
     }
 
     double operator () (double x) const {
@@ -257,7 +258,8 @@ public:
                 [] (gsl_spline*g) {gsl_spline_free(g);}
             );
 
-            if( auto code=gsl_spline_init (interpolation.get(), f.interpolation->x, f.interpolation->y, f.interpolation->size); code!=GSL_SUCCESS )
+            int code=gsl_spline_init (interpolation.get(), f.interpolation->x, f.interpolation->y, f.interpolation->size);
+            if(code!=GSL_SUCCESS)
                 throw std::runtime_error(gsl_strerror(code));
 
             acc = acc_t( gsl_interp_accel_alloc (), [] (gsl_interp_accel*a) {gsl_interp_accel_free(a);} );
@@ -335,15 +337,15 @@ public:
         return 0;
     }
 
-    std::span<double> GetX (void) const {
+    std::vector<double> GetX (void) const {
         if(interpolation)
-            return {interpolation->x,interpolation->size};
+            return std::vector<double>(interpolation->x,interpolation->x+interpolation->size);
         else
             throw std::invalid_argument(__PRETTY_FUNCTION__);
     }
-    std::span<double> GetY (void) const {
+    std::vector<double> GetY (void) const {
         if(interpolation)
-            return {interpolation->y,interpolation->size};
+            return std::vector<double>(interpolation->y,interpolation->y+interpolation->size);
         else
             throw std::invalid_argument(__PRETTY_FUNCTION__);
     }
@@ -374,11 +376,11 @@ protected:
 inline
 std::ostream &
 operator << (std::ostream &os, const Interpolator1D &v) {
-    const auto s = v.interpolation.get();
+    const gsl_spline *s = v.interpolation.get();
     if(s) {
-        os << "(Interpolator1D " << s->size << " points "
-           << "x=[" << s->x [0] << "," << s->x [s->size-1] << "]) "
-           << "y=[" << s->y [0] << "," << s->y [s->size-1] << "])";
+    //     os << "(Interpolator1D " << s->size << " points "
+    //        << "x=[" << s->x [0] << "," << s->x [s->size-1] << "]) "
+    //        << "y=[" << s->y [0] << "," << s->y [s->size-1] << "])";
     } else {
         os << "(Interpolator1D uninitialized)";
     }
