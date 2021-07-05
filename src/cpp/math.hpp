@@ -37,10 +37,11 @@ struct Options {
 
 inline
 std::ostream & operator << (std::ostream &os, const Options &v) {
-    os << "(math options: eps_abs="
-       << v.eps_abs
-       << " eps_rel="
-       << v.eps_rel
+    os << "(math options:"
+       << " eps_abs=" << v.eps_abs
+       << " eps_rel=" << v.eps_rel
+       << " limit=" << v.limit
+       << " iters=" << v.iters
        << ")";
     return os;
 }
