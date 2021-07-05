@@ -49,9 +49,9 @@ YieldCurve::Build (
             throw std::invalid_argument("YieldCurve::Build: instrument maturity must be >1");
     }
 
-    std::vector<math::Parameter> pars (vx.size()-1,math::Parameter(0,1e-2));
+    std::vector<math::Parameter> pars (vx.size(),math::Parameter(0,1e-2));
 
-    unsigned pars_max = pars.size();
+    // unsigned pars_max = pars.size();
 
     // printf("-1-\n");
     //
@@ -64,11 +64,11 @@ YieldCurve::Build (
 
     auto func = [&] (const std::vector<double> &_vy) -> double {
 
-        for(unsigned i=pars_max;i<_vy.size(); i++)
-            if(std::fabs(_vy[i]-pars[i])>pars[i].error) return NAN;
+        // for(unsigned i=pars_max;i<_vy.size(); i++)
+        //     if(std::fabs(_vy[i]-pars[i])>pars[i].error) return NAN;
 
         std::vector<double> vy(_vy.begin(),_vy.end());
-        vy.push_back(yield_to_infinity);
+        // vy.push_back(yield_to_infinity);
 
         // printf("y=[");
         // for(auto x: vy)
@@ -100,7 +100,7 @@ YieldCurve::Build (
     // for( auto y: r.x)
     for(std::vector<math::Parameter>::const_iterator it=r.x.cbegin(); it!=r.x.cend(); it++)
         vy.push_back(it->value);
-    vy.push_back(yield_to_infinity);
+    // vy.push_back(yield_to_infinity);
 
     if(vx.size()!=vy.size())
         throw std::logic_error("YieldCurve::Build: internal error");
