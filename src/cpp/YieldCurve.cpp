@@ -21,6 +21,19 @@ YieldCurve &
 YieldCurve::Build (
     math::Interpolator1D::Type itype,
     float yield_to_infinity
+){
+    math::Options opts;
+    opts.eps_abs = 1e-5;
+    opts.eps_rel = 1e-5;
+    opts.iters = 1000 + instruments.size()*1000;
+    return Build(itype,yield_to_infinity,opts);
+}
+
+YieldCurve &
+YieldCurve::Build (
+    math::Interpolator1D::Type itype,
+    float yield_to_infinity,
+    const math::Options &opts
 ) {
     if(itype==math::Interpolator1D::Type::PiecewiseConstant)
         return BuildPiecewiseConstant();
@@ -38,6 +51,8 @@ YieldCurve::Build (
 
     std::vector<math::Parameter> pars (vx.size()-1,math::Parameter(0,1e-2));
 
+    unsigned pars_max = pars.size();
+
     // printf("-1-\n");
     //
     // printf("x=[");
@@ -47,9 +62,12 @@ YieldCurve::Build (
 
     // const float yield_to_infinity = 0; // FIXME
 
-    auto func = [&] (const std::vector<double> &pars) -> double {
+    auto func = [&] (const std::vector<double> &_vy) -> double {
 
-        std::vector<double> vy(pars.begin(),pars.end());
+        for(unsigned i=pars_max;i<_vy.size(); i++)
+            if(std::fabs(_vy[i]-pars[i])>pars[i].error) return NAN;
+
+        std::vector<double> vy(_vy.begin(),_vy.end());
         vy.push_back(yield_to_infinity);
 
         // printf("y=[");
@@ -74,16 +92,8 @@ YieldCurve::Build (
         // printf("result=%g\n",result);
         return result;
     };
+    math::Result r = math::minimize( func, pars, opts );
 
-    math::Options opts;
-    opts.iters = 20000;
-    math::Result r = math::minimize(
-        func,
-        pars,
-        opts
-    );
-
-    // std::cout << r << "\n";
     if(!r) throw std::runtime_error(r.GetError());
 
     std::vector<double> vy;

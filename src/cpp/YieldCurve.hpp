@@ -39,6 +39,14 @@ public:
     Build (
         math::Interpolator1D::Type t = math::Interpolator1D::Type::CubicSpline,
         float yield_to_infinity = 0
+        // const math::Options &opts = opts_default
+    );
+
+    YieldCurve &
+    Build (
+        math::Interpolator1D::Type t,
+        float yield_to_infinity,
+        const math::Options &opts
     );
 
     YieldCurve & BuildPiecewiseConstant (void);

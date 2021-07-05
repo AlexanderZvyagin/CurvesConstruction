@@ -23,8 +23,8 @@ public:
         char buf[256];
         snprintf(
             buf, sizeof(buf),
-            "LegFixed t0=%g dt=%g n=%d",
-            t0,dt,n
+            "LegFixed t0=%g dt=%g n=%d rate=%g",
+            t0,dt,n,rate
         );
         return buf;
     }
