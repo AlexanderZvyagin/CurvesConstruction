@@ -20,6 +20,15 @@ PYBIND11_MODULE(curves, m) {
         .def(py::init<>())
     ;
 
+    py::class_<math::Options> (m, "MathOptions")
+        .def(py::init<>())
+        .def_readwrite("eps_abs", &math::Options::eps_abs)
+        .def_readwrite("eps_rel", &math::Options::eps_rel)
+        .def_readwrite("limit", &math::Options::limit)
+        .def_readwrite("iters", &math::Options::iters)
+        .def("__repr__", [] (const math::Options &v) {std::stringstream s; s<<v; return s.str();});
+    ;
+
     py::enum_<math::Interpolator1D::Type>(i1d, "Type")
         .value("None",                  math::Interpolator1D::Type::None)
         .value("PiecewiseConstant",     math::Interpolator1D::Type::PiecewiseConstant)
@@ -112,13 +121,20 @@ PYBIND11_MODULE(curves, m) {
         .def("Build",
             [] (
                 YieldCurve &c,
-                math::Interpolator1D::Type itype,
-                float rate_extrapolation)
-            {
-                return c.Build(itype,rate_extrapolation);
+                math::Interpolator1D::Type itype
+            ) {
+                return c.Build(itype);
             },
-            py::arg("itype") = math::Interpolator1D::Type::CubicSpline,
-            py::arg("rate_extrapolation") = 0
+            py::arg("itype") = math::Interpolator1D::Type::CubicSpline
+        )
+        .def("Build",
+            [] (
+                YieldCurve &c,
+                math::Interpolator1D::Type itype,
+                math::Options opts
+            ) {
+                return c.Build(itype,opts);
+            }
         )
         .def("GetInstruments",
             [] (const YieldCurve &c){
@@ -130,12 +146,6 @@ PYBIND11_MODULE(curves, m) {
         )
     ;
 
-    // py::class_<math::Options> (m, "MathOptions")
-    //     .def(py::init<>())
-    //     .def_readwrite("eps_abs", &math::Options::eps_abs)
-    //     .def_readwrite("eps_rel", &math::Options::eps_rel)
-    //     .def("__repr__", [] (const math::Options &v) {return fmt::format("{}",v);});
-    // ;
     // py::class_<math::Stat> (m, "Stat")
     //     .def(py::init<>())
     //     .def_readwrite("n", &math::Stat::n)

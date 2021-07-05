@@ -37,15 +37,12 @@ public:
 
     YieldCurve &
     Build (
-        math::Interpolator1D::Type t = math::Interpolator1D::Type::CubicSpline,
-        float yield_to_infinity = 0
-        // const math::Options &opts = opts_default
+        math::Interpolator1D::Type t = math::Interpolator1D::Type::CubicSpline
     );
 
     YieldCurve &
     Build (
         math::Interpolator1D::Type t,
-        float yield_to_infinity,
         const math::Options &opts
     );
 

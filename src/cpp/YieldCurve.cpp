@@ -19,20 +19,18 @@ YieldCurve::BuildPiecewiseConstant (void) {
 
 YieldCurve &
 YieldCurve::Build (
-    math::Interpolator1D::Type itype,
-    float yield_to_infinity
+    math::Interpolator1D::Type itype
 ){
     math::Options opts;
     opts.eps_abs = 1e-5;
     opts.eps_rel = 1e-5;
     opts.iters = 1000 + instruments.size()*1000;
-    return Build(itype,yield_to_infinity,opts);
+    return Build(itype,opts);
 }
 
 YieldCurve &
 YieldCurve::Build (
     math::Interpolator1D::Type itype,
-    float yield_to_infinity,
     const math::Options &opts
 ) {
     if(itype==math::Interpolator1D::Type::PiecewiseConstant)
