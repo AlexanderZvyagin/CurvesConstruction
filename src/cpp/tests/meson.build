@@ -16,15 +16,6 @@ minimization = executable (
 )
 test('minimization', minimization)
 
-# swap = executable (
-#     'swap',
-#     sources : ['swap.cpp'],
-#     include_directories : ['..','../include'],
-#     link_with           : [],
-#     dependencies : [gsl],
-# )
-# test('swap', swap)
-
 curves = executable (
     'curves',
     sources : ['curves.cpp'],
@@ -42,3 +33,16 @@ gsl_init = executable (
     dependencies : [gsl],
 )
 test('gsl_init', gsl_init)
+
+libsystemd = dependency('libsystemd')
+
+if threads.found() and libsystemd.found()
+    logs = executable (
+        'logs',
+        sources : ['logs.cpp','../log.cpp'],
+        include_directories : ['..','../include'],
+        link_with           : [],
+        dependencies : [threads,libsystemd],
+    )
+    test('logs', logs)
+endif
