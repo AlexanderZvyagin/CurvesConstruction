@@ -12,7 +12,7 @@ py3.extension_module (
 #      '/home/zvyagin/Projects/Swaptions.git/lib/python3.8/site-packages/pybind11/include'
   ],
   link_with           : [curveslib],
-  dependencies        : [gsl],
+  dependencies        : [],
 	install             : true,
 	install_dir         : get_option('prefix')+'/lib/python3.8/site-packages/',
 )
