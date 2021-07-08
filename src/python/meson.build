@@ -6,7 +6,7 @@ py3.extension_module (
     'binding.cpp',
   ],
   include_directories : [
-      '..',
+      '../core',
       '../include',
       '/usr/include/python3.8',
 #      '/home/zvyagin/Projects/Swaptions.git/lib/python3.8/site-packages/pybind11/include'
