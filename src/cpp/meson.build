@@ -1,20 +1,21 @@
 # meson build
 # cd build
-# meson configure -Dprefix=$VIRTUAL_ENV -Doptimization=3 -Dcpp_std=c++2a -Ddebug=false
+# meson configure -Dprefix=$VIRTUAL_ENV -Doptimization=3 -Dcpp_std=c++17 -Ddebug=false
 
 project (
 	'Curves Construction',
 	'cpp',
 )
 
-gsl        = dependency('gsl')
-python3    = dependency('python3')
+gsl        = dependency('gsl',  			required:true	)
+python3    = dependency('python3',		required:false)
+threads    = dependency('threads',		required:false)
 
+# Minimize the dependencies for the core library.
 curveslib = static_library (
 	'curveslib',
 	sources: [
         'math.cpp',
-        # 'log.cpp',
         'YieldCurve.cpp',
   			'ZeroCouponBond.cpp',
   			'ForwardRateAgreement.cpp',
@@ -22,9 +23,14 @@ curveslib = static_library (
     ],
 	include_directories : ['include'],
 	dependencies : [gsl],
-    #include_directories : include_directories('include')),
 	install : true,
 )
 
 subdir('tests')
-subdir('python')
+
+if python3.found()
+		subdir('python')
+endif
+
+subdir('mongodb')
+subdir('web-server')
