@@ -9,6 +9,9 @@ struct UserData {
     UserData (void);
     ~UserData (void);
     json Call(const json &) noexcept;
+
+    void build_curve    (const json &data, json &pld);
+    void get_quotes     (const json &data, json &pld);
 };
 
 // nlohmann::json UserData_Request1 (const nlohmann::json &payload);

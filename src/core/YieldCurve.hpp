@@ -35,18 +35,19 @@ public:
 
     YieldCurve & Add (const Instrument &x);
 
-    YieldCurve &
+    math::Result
     Build (
         math::Interpolator1D::Type t = math::Interpolator1D::Type::CubicSpline
     );
 
-    YieldCurve &
+    math::Result
     Build (
         math::Interpolator1D::Type t,
         const math::Options &opts
     );
 
-    YieldCurve & BuildPiecewiseConstant (void);
+    math::Result
+    BuildPiecewiseConstant (void);
 
     float GetForwardRate (
         float t1,

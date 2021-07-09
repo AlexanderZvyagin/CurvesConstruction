@@ -7,17 +7,17 @@ YieldCurve & YieldCurve::Add (const Instrument &x) {
     return *this;
 }
 
-YieldCurve &
+math::Result
 YieldCurve::BuildPiecewiseConstant (void) {
     *this = math::Interpolator1D();
     // for(auto [t,instr]: GetInstruments())
     //     instr->AddToCurve(*this);
     for(std::map <float,std::shared_ptr<Instrument>>::const_iterator it=instruments.cbegin(); it!=instruments.cend(); it++)
         it->second->AddToCurve(*this);
-    return *this;
+    return math::Result();
 }
 
-YieldCurve &
+math::Result
 YieldCurve::Build (
     math::Interpolator1D::Type itype
 ){
@@ -28,7 +28,7 @@ YieldCurve::Build (
     return Build(itype,opts);
 }
 
-YieldCurve &
+math::Result
 YieldCurve::Build (
     math::Interpolator1D::Type itype,
     const math::Options &opts
@@ -61,51 +61,29 @@ YieldCurve::Build (
     // const float yield_to_infinity = 0; // FIXME
 
     auto func = [&] (const std::vector<double> &_vy) -> double {
-
-        // for(unsigned i=pars_max;i<_vy.size(); i++)
-        //     if(std::fabs(_vy[i]-pars[i])>pars[i].error) return NAN;
-
         std::vector<double> vy(_vy.begin(),_vy.end());
-        // vy.push_back(yield_to_infinity);
-
-        // printf("y=[");
-        // for(auto x: vy)
-        //     printf("%g,",x);
-        // printf("]\n");
-
-        // YieldCurve curve(std::span<double>(vx.data(),vx.size()),pars,_type);
-        // printf("vx,vy sizes: %d %d    itype=%d\n",(int)vx.size(),(int)vy.size(),(int)(itype));
-
         *this = Interpolator1D (vx,vy,itype);
-        // printf("ok!\n");
-
-        // ft();
-        // printf("C %g %g %g\n",curve.GetDiscountFactor(0),curve.GetDiscountFactor(3),curve.GetDiscountFactor(5));
-
-        // printf("Calculating result... %d %d\n",(int)curve.GetX().size(),(int)curve.GetY().size());
         double result {0};
-        // for(auto &[t,instr]: instruments) {
         for(std::map <float,std::shared_ptr<Instrument>>::const_iterator it=instruments.cbegin(); it!=instruments.cend(); it++)
             result += std::pow( it->second->Value()-it->second->Eval(*this), 2 );
-        // printf("result=%g\n",result);
         return result;
     };
-    math::Result r = math::minimize( func, pars, opts );
+    math::Result result = math::minimize( func, pars, opts );
 
-    if(!r) throw std::runtime_error(r.GetError());
+    // if(!r) throw std::runtime_error(r.GetError());
 
     std::vector<double> vy;
     // for( auto y: r.x)
-    for(std::vector<math::Parameter>::const_iterator it=r.x.cbegin(); it!=r.x.cend(); it++)
+    for(std::vector<math::Parameter>::const_iterator it=result.x.cbegin();
+        it!=result.x.cend(); it++)
         vy.push_back(it->value);
-    // vy.push_back(yield_to_infinity);
 
     if(vx.size()!=vy.size())
         throw std::logic_error("YieldCurve::Build: internal error");
 
     *this = math::Interpolator1D (vx,vy,itype);
 
-    return *this;
+    return result;
 }
 
 void YieldCurve::Print(void) const {

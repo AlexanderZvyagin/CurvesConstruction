@@ -33,9 +33,16 @@
 </script>
 
 
-<h1>Show Curve</h1>
+<h1>Show Curve!</h1>
+<div class='canvas'>
 <Scatter data={plot_data}/>
+</div>
 <!-- <Line {data} /> -->
 
 <style>
+.canvas{
+    /* width: 600px; */
+    /* height: 600px; */
+    /* border: solid; */
+}
 </style>
