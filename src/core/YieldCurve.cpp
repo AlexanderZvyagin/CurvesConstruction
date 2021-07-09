@@ -49,17 +49,6 @@ YieldCurve::Build (
 
     std::vector<math::Parameter> pars (vx.size(),math::Parameter(0,1e-2));
 
-    // unsigned pars_max = pars.size();
-
-    // printf("-1-\n");
-    //
-    // printf("x=[");
-    // for(auto x: vx)
-    //     printf("%g,",x);
-    // printf("]\n");
-
-    // const float yield_to_infinity = 0; // FIXME
-
     auto func = [&] (const std::vector<double> &_vy) -> double {
         std::vector<double> vy(_vy.begin(),_vy.end());
         *this = Interpolator1D (vx,vy,itype);
@@ -69,8 +58,6 @@ YieldCurve::Build (
         return result;
     };
     math::Result result = math::minimize( func, pars, opts );
-
-    // if(!r) throw std::runtime_error(r.GetError());
 
     std::vector<double> vy;
     // for( auto y: r.x)
@@ -92,20 +79,10 @@ void YieldCurve::Print(void) const {
 
     std::cout << static_cast<math::Interpolator1D>(*this) << "\n";
 
-    // for( auto [t,y]: yields) {
-    //     printf("  t={}  yield={}\n",t,y);
-    // }
-
-    // if(iconst){
-    //     printf("PiecewiseConstant (time,yield)=[ ");
-    //     for(std::map<double,double>::const_iterator it=iconst->GetXY().cbegin(); it!=iconst->GetXY().cend(); it++ ){
-    //         printf("(%g,%g) ",it->first,it->second);
-    //     }
-    //     printf("]\n");
-    // }
-
     // for(auto [t,instr]: GetInstruments()) {
-    for(std::map <float,std::shared_ptr<Instrument>>::const_iterator it=instruments.cbegin(); it!=instruments.cend(); it++){
+    for(std::map <float,std::shared_ptr<Instrument>>::const_iterator it=instruments.cbegin();
+        it!=instruments.cend(); it++
+    ){
         const Instrument *instr = it->second.get();
         if(!instr) continue;
         printf("%s\n",instr->About().c_str());
