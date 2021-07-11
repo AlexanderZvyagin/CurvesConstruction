@@ -1,5 +1,4 @@
 <script>
-    import { Modals, closeModal } from 'svelte-modals'
     import {curve_instruments,quotes} from './store.js';
 
     let fra_start=0, fra_length=0;
@@ -46,7 +45,6 @@
             curve_instruments.update(v=>{
                 return [...v.slice(0,index),...v.slice(index+1,v.length)];
             });
-            // fras = [...fras.slice(0,index),...fras.slice(index+1,fras.length)];
         else{
             console.warn('fra_del: not found:',v);
         }
@@ -54,14 +52,9 @@
 
     $:{
         // this variable is unused,
-        // but it is neededd to trigger the reactivity on quotes update
+        // but it is neededd to trigger a reaction on quotes update
         const quotes_length = $quotes.length;
         curve_instruments.update(cur=>cur.map(fra=>fra_set_quote(fra)));
-    }
-
-    $:{
-        const l = $curve_instruments.length;
-        console.log('curve_instruments:',l);
     }
 </script>
 
@@ -84,7 +77,7 @@
                 FRA {v.start}x{v.length}
             </td>
             <td>
-                <input type=number value={v.quote} on:change={x=>{v.quote=x.target.value;}} min="any" max="any" step="0.001"/>
+                <input type=number value={v.quote} on:change={x=>{v.quote=x.target.value;}} min="any" max="any" step="any"/>
                 <!-- <input type=number bind:value={v.quote} min="any" max="any" step="any"/> -->
             </td>
         </tr>

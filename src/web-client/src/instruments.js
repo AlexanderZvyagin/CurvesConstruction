@@ -1,3 +1,5 @@
+// https://www.openfigi.com
+
 const instrument_type = name => {
     let type;
     if(name.startsWith('EUFR') || name.startsWith('EUR0'))

@@ -1,23 +1,19 @@
 <script>
-	import Quotes from './Quotes.svelte';
 	import TimeGrid from './TimeGrid.svelte';
-	import ShowCurve from './ShowCurve.svelte';
-	import ShowCurves from './ShowCurve.svelte';
+	import ShowCurves from './ShowCurves.svelte';
 	import CurveBuildInput from './CurveBuildInput.svelte';
 	import {curve_instruments, quotes, curves} from './store.js';
 	import {instrument_info} from './instruments.js';
 
 	let
-		url               = 'ws://localhost:8100',
+		url               = 'ws://192.168.1.82:8100',
 		protocol          = 'curves',
 		ws_ready          = false,
 		ws                = new WebSocket(url,protocol),
 		date,
 		request_id        = 0,
 		quotes_request_id = 0,
-		build_curve_request_id = 0,
 		plot              = {};
-		// quotes_list       = [];
 
 	ws.onopen = () => {
 		ws_ready = true;
@@ -32,7 +28,7 @@
 	}
 	ws.onmessage = (msg) => {
 		const data = JSON.parse(msg.data);
-		console.log(`onmessage size=${msg.data.length}  ${data.type}`);
+		// console.log(`onmessage size=${msg.data.length}  ${data.type}`);
 
 		switch(data.type){
 			case 'echo_OK':{
@@ -50,8 +46,6 @@
 							return instrument;
 						})
 					});
-					// console.log('DONE');
-					// console.log($quotes);
 				}else{
 					console.warn(`get_quotes_OK: id mismatch ${quotes_request_id} ${data.payload.request_id}`)
 				}
@@ -59,17 +53,12 @@
 			}
 			case 'build_curve_OK':{
 				curves.update(current=>{
-					console.log(`curves update!  current.length=${current.length}`);
-					return [...current,data.payload];
+                                    const item = current.find(v=>v.request.request_id===data.payload.request_id);
+                                    if(!item) throw `Build curves: not found request id=${data.payload.request_id}`;
+                                    console.log('curves update');
+                                    item.reply = data.payload;
+                                    return current;
 				});
-				// if(build_curve_request_id===data.payload.request_id){
-				// 	plot = {
-				// 		x:data.payload.plot.x,
-				// 		y:data.payload.plot.y
-				// 	};
-				// }else{
-				// 	console.warn(`build_curve_OK: id mismatch ${build_curve_request_id} ${data.payload.request_id}`)
-				// }
 				break;
 			}
 			default:
@@ -78,7 +67,6 @@
 	}
 
 	const send = data => {
-		// console.log('send_request');
 		if(ws.readyState === WebSocket.OPEN){
 			request_id += 1;
 			ws.send(JSON.stringify(data));
@@ -88,9 +76,7 @@
 	};
 
 	function get_quotes (e) {
-		// console.log(`get_quotes: ready=${ws.readyState === WebSocket.OPEN} ${e.detail}`);
 		date = e.detail;
-		// quotes_list = [];
 		quotes.update(current=>[]);
 
 		if(ws.readyState === WebSocket.OPEN){
@@ -102,7 +88,6 @@
 					date,
 				}
 			};
-			// console.log('get_quotes, sending:',data);
 			ws.send(JSON.stringify(data));
 			quotes_request_id = request_id;
 		}else{
@@ -120,43 +105,22 @@
 	};
 
 	function build_curve (e) {
-		// console.log('yyy',e.detail);
 		if(ws.readyState === WebSocket.OPEN){
-
-			// let instruments = [];
-
-			// for(let i in $curve_instruments){
-			// 	const v = $curve_instruments[i];
-			// 	if(!v.use) continue;
-			// 	const q = $quotes.find(x=>x[0]===v.name);
-			// 	// console.log(`${v.name} quote: ${q}`);
-			// 	if(q)
-			// 		instruments.push({...v,quote:q[1]});
-			// }
-
-			// console.log(instruments);
-
 			request_id += 1;
 			let data = {
 				type:'build_curve',
 				payload:{
 					...e.detail,
 					request_id,
-					// date,
 					points:1000,
-					// instruments
 				}
 			};
+            curves.update(cur=>[...cur,{request:data.payload}]);
 			ws.send(JSON.stringify(data));
-			build_curve_request_id = request_id;
 		}else{
 			console.warn(`WebSocket is not ready:  readyState=${ws.readyState}`);
 		}
 	}
-
-	// $:{
-	// 	get_quotes(date);
-	// }
 
 </script>
 
@@ -164,24 +128,17 @@
 	<h1>Curves Construction</h1>
 </header>
 
-<!-- <nav>
-	<ul>
-		<li>Tab A</li>
-		<li>Tab B</li>
-	</ul>
-</nav> -->
-
 <main>
 	<!-- <button on:click={handle_echo}>echo</button> -->
 	<div class='CurveBuildInput'>
 		<CurveBuildInput on:buildCurve={build_curve} on:newDate={get_quotes}/>
 	</div>
-	<!-- <input type="date" name="date" min="2011-01-01" max="2019-08-01" bind:value={date}> -->
-	<!-- <button on:click={build_curve}>Build Curve</button> -->
-	<!-- <div class='ShowCurves'>
+	<div class='ShowCurves'>
 		<ShowCurves />
+	</div>
+	<!-- <div class='CurvesBuildInfo'>
+		<CurvesBuildInfo />
 	</div> -->
-	<!-- <Quotes data={$quotes}/> -->
 </main>
 
 <style>

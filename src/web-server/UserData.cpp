@@ -98,8 +98,6 @@ void UserData::build_curve (const json &data, json &pld) {
     std::istringstream(the_date_str) >> date::parse("%F",the_date);
     auto instruments = data.at(payload).at("instruments");
 
-    debug("build_curve 1");
-
     for(auto instr: instruments){
         auto type = instr.at("type").get<std::string>();
         if(type=="FRA") {
@@ -114,7 +112,6 @@ void UserData::build_curve (const json &data, json &pld) {
         }
         // debug("{}",instr.dump());
     }
-    debug("build_curve 2");
 
     auto result = curve.Build();
     curve.Print();
@@ -133,5 +130,46 @@ void UserData::build_curve (const json &data, json &pld) {
     }
 
     pld["plot"] = json {{"x",vx},{"y",vy}};
-    pld["resuts"] = nullptr;
+
+    if(1){
+        json js = {
+            {"value",           result.value},
+            {"value_error",     result.error},
+            {"calls",           result.calls},
+            {"interpolation",   {
+                {"type",curve.GetTypeName()},
+                {"x",   nullptr},
+                {"y",   nullptr}
+            }}
+        };
+        if(!result.GetError().empty())
+            js["error"] = result.GetError();
+        json
+            &js_x = js["interpolation"]["x"],
+            &js_y = js["interpolation"]["y"];
+        const auto
+            vx = curve.GetX(),
+            vy = curve.GetY();
+        for(int i=0;i<curve.GetSize();i++){
+            js_x.push_back(vx.at(i));
+            js_y.push_back(vy.at(i));
+        }
+
+        json js_instr;
+        for(auto [t,instr]: curve.GetInstruments() ){
+            json jj {
+                {"about",instr->About()},
+                {"quote",instr->Value()},
+                {"computed",instr->Eval(curve)},
+            };
+            if(auto p=dynamic_cast<ForwardRateAgreement*>(instr.get());p){
+                jj["type"  ] = "FRA";
+                jj["start" ] = p->start;
+                jj["length"] = p->length;
+            }
+            js_instr.push_back(std::move(jj));
+        }
+        js["instruments"] = std::move(js_instr);
+        pld["resuts"] = std::move(js);
+    }
 }
