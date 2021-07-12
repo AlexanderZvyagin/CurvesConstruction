@@ -4,6 +4,7 @@
 	import CurveBuildInput from './CurveBuildInput.svelte';
 	import {curve_instruments, quotes, curves} from './store.js';
 	import {instrument_info} from './instruments.js';
+	import CurvesBuildInfo from './CurvesBuildInfo.svelte'
 
 	let
 		url               = 'ws://192.168.1.82:8100',
@@ -136,9 +137,9 @@
 	<div class='ShowCurves'>
 		<ShowCurves />
 	</div>
-	<!-- <div class='CurvesBuildInfo'>
+	<div class='CurvesBuildInfo'>
 		<CurvesBuildInfo />
-	</div> -->
+	</div>
 </main>
 
 <style>
