@@ -194,7 +194,7 @@ int main(int argc, const char **argv) {
 
     mount.origin = mount_origin.c_str();
 
-    // // fmt::print("port={} origin={}\n",info.port,mount.origin);
+    logger->info("port={} origin={}\n",info.port,mount.origin);
 
     struct lws_protocols protocols[] = {
         { "http", lws_callback_http_dummy, 0, 0, 0, NULL, 0 },
