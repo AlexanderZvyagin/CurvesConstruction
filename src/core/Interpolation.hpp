@@ -339,6 +339,19 @@ public:
         }
     }
 
+    static math::Interpolator1D::Type GetType (std::string name) {
+        if(name=="NONE") return None;
+        else if(name=="PiecewiseConstant") return PiecewiseConstant;
+        else if(name=="Linear") return Linear;
+        else if(name=="Polynomial") return Polynomial;
+        else if(name=="CubicSpline") return CubicSpline;
+        else if(name=="CubicSplinePeriodic") return CubicSplinePeriodic;
+        else if(name=="Akima") return Akima;
+        else if(name=="AkimaPeriodic") return AkimaPeriodic;
+        else if(name=="Steffen") return Steffen;
+        else throw std::invalid_argument(__PRETTY_FUNCTION__);
+    }
+
     double Integral (double a,double b) const {
         if(itype==Type::PiecewiseConstant)
             return iconst->Integral(a,b);
