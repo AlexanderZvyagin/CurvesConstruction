@@ -8,7 +8,7 @@
     let dispatch = createEventDispatcher();
 
     let
-        interpolation_type = 'PieceWise',
+        interpolation_type = 'Steffen',
         date = "2018-02-02";
     onMount(() => {
         // ... Run something after component has mounted
@@ -59,9 +59,10 @@
         <div class='interpolation'>
             <label for='interpolation'>Interpolation</label>
             <select id='interpolation' bind:value={interpolation_type}>
-                <option value="PieceWise">PieceWise</option>
+                <option value="PiecewiseConstant">PiecewiseConstant</option>
                 <option value="Linear">Linear</option>
                 <option value="CubicSpline">CubicSpline</option>
+                <option value="Steffen">Steffen</option>
             </select>
         </div>
         <CurveInputData/>
