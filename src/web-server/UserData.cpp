@@ -97,6 +97,7 @@ void UserData::build_curve (const json &data, json &pld) {
     date::year_month_day the_date;
     std::istringstream(the_date_str) >> date::parse("%F",the_date);
     auto instruments = data.at(payload).at("instruments");
+    const std::string interpolation_type = data.at(payload).at("interpolation_type");
 
     for(auto instr: instruments){
         auto type = instr.at("type").get<std::string>();
@@ -113,7 +114,7 @@ void UserData::build_curve (const json &data, json &pld) {
         // debug("{}",instr.dump());
     }
 
-    auto result = curve.Build();
+    auto result = curve.Build(YieldCurve::GetType(interpolation_type));
     curve.Print();
 
     auto points = data.at(payload).at("points").get<int>();
@@ -132,7 +133,7 @@ void UserData::build_curve (const json &data, json &pld) {
     pld["plot"] = json {{"x",vx},{"y",vy}};
 
     if(1){
-        json js = {
+        json result_js = {
             {"value",           result.value},
             {"value_error",     result.error},
             {"calls",           result.calls},
@@ -143,10 +144,10 @@ void UserData::build_curve (const json &data, json &pld) {
             }}
         };
         if(!result.GetError().empty())
-            js["error"] = result.GetError();
+            result_js["error"] = result.GetError();
         json
-            &js_x = js["interpolation"]["x"],
-            &js_y = js["interpolation"]["y"];
+            &js_x = result_js["interpolation"]["x"],
+            &js_y = result_js["interpolation"]["y"];
         const auto
             vx = curve.GetX(),
             vy = curve.GetY();
@@ -169,7 +170,7 @@ void UserData::build_curve (const json &data, json &pld) {
             }
             js_instr.push_back(std::move(jj));
         }
-        js["instruments"] = std::move(js_instr);
-        pld["resuts"] = std::move(js);
+        result_js["instruments"] = std::move(js_instr);
+        pld["result"] = std::move(result_js);
     }
 }
