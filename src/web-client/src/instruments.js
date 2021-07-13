@@ -138,9 +138,48 @@ function swap_info (name) {
 //     EUSA60:'60Y',
 // }
 
+const code = c => c.charCodeAt(0);
+
+// returns number a new pos OR undefined if there is nothing to extract
+function decode_months_part (s,i) {
+    let l=0;
+
+    // skip the leading 0, but only one time
+    if( i<s.length && s[i]==='0')
+        i++;
+
+    while(true){
+        const n = parseInt(s[i]);
+        if(isNaN(n)) break;
+        l = l*10 + 12 * n;
+        i++;
+    }
+    // if(i<s.length){
+    //     const n = parseInt(s[i]);
+    //     if(n){
+    //         l += 12 * n;
+    //         i++;
+    //     }
+    // }
+
+    if( i<s.length ){
+        const c = code(s[i]);
+        if( code(s[i])>=code('A') && code(s[i])<=code('K') ) {
+            l += c - code('A') + 1;
+            i++;
+        }
+    }
+    return [l,i];
+}
+
+function decode_months(s) {
+    const [n,i] = decode_months_part(s,0);
+    if(i!==s.length) throw `decode_months() faild on ${s}`;
+    return n;
+}
+
 // return two numbers in months
 function decode_FRA_periods (name) {
-    const code = c => c.charCodeAt(0);
     // 'EUFR0J1J' # FRA 10M x 22M '''
     // if( name=="EUR006M" )
     //     return [0,6];
@@ -149,67 +188,169 @@ function decode_FRA_periods (name) {
 
     if( name.startsWith(fra0_prefix) ){
         const unit = name[name.length-1]; // 'M', 'W'
-        // if(name[name.length-1]!=='M')
-        // 	throw `Bad name ${name}`;
         const name2 = name.substring(fra0_prefix.length,name.length-1);
         const n = parseInt(name2);
-        // console.log(`${name} ${name2} ${n} ${unit}`);
         if(unit==='M')
             return [0,n];
         else
             return;
     }
-    // console.log(name);
-
 
     const fra_prefix = 'EUFR';
     if( name.startsWith(fra_prefix) ){
 
         const s = name.substring(fra_prefix.length);
-        // console.log(`${name} => ${s}`);
-
-        // returns number a new pos OR undefined if there is nothing to extract
-        const decode_months = (s,i) => {
-            // console.log(`decoding ${s} from ${i}`)
-            let l=0;
-
-            // skip the leading 0, but only one character
-            if( i<s.length && s[i]==='0')
-                i++;
-
-            if(i<s.length){
-                const n = parseInt(s[i]);
-                if(n){
-                    // take a single number as a year
-                    l += 12 * n;
-                    i++;
-                }
-            }
-            if( i<s.length ){
-                const c = code(s[i]);
-                if( code(s[i])>=code('A') && code(s[i])<=code('K') ) {
-                    // console.log('months:',c - code('A') + 1);
-                    l += c - code('A') + 1;
-                    i++;
-                }
-            }
-            return [l,i];
-        }
 
         try {
-            const [n1,i1] = decode_months(name,fra_prefix.length);
-            const [n2,i2] = decode_months(name,i1);
-            // console.log(`${name} => ${n1} ${n2}`)
+            const [n1,i1] = decode_months_part(name,fra_prefix.length);
+            const [n2,i2] = decode_months_part(name,i1);
             if(i2!==name.length)
                 throw `check it: ${name}  (${n1} ${i1})   (${n2} ${i2})`;
             return [n1,n2];
         } catch (e) {
-            console.error(e);
+            error(e);
         }
     }
 }
 
+// For a period in months given as an integer number
+// returns a string:  format_months(27) -> '2Y3M'
+function format_months (months) {
+    let
+        p = Number(months),
+        y = Math.floor(p/12),
+        m = p % 12,
+        r = '';
+    if(y) r  = `${y}Y`;
+    if(m) r += `${m}M`;
+    return r || '0M';
+}
+
+function decode (name) {
+    try {
+        let
+            r,
+            last_char = name[name.length-1],
+            last_char_TZ = 'TZ'.indexOf(last_char)!==-1;
+
+        r = RegExp('^EUSP.*$').exec(name);
+        if(r){
+            return {
+                name,
+                type:'Swaption Volatility',
+                descr:'Swaption Volatility',
+            }
+        }
+
+        r = RegExp('^EUVE.*$').exec(name);
+        if(r){
+            return {
+                name,
+                type:'Swaption Volatility',
+                descr:'Swaption Volatility',
+            }
+        }
+
+        r = RegExp('^EUSWIM.*$').exec(name);
+        if(r){
+            return {
+                name,
+                type:'IMM Swap',
+                descr:'IMM Swap',
+            }
+        }
+
+        r = RegExp('^EUDR(.*)$').exec(name);
+        if(r && name.length<7 && !last_char_TZ){
+            if(r){
+                const
+                    length = decode_months(r[1]);
+                return {
+                    name,
+                    type:'Deposit',
+                    length,
+                    descr:`EUR Deposit ${format_months(length)}`,
+                }
+            }
+        }
+
+
+        r = RegExp('^EUBSV(\\d+)$').exec(name);
+        if(r){
+            const
+                leg1   = 3,
+                leg2   = 6,
+                length = Number(r[1]);
+            return {
+                name,
+                type:'Basis Swap',
+                leg1,
+                leg2,
+                length,
+                descr:`EUR Basis Swap ${format_months(length)} (${format_months(leg1)} vs ${format_months(leg2)})`,
+            }
+        }
+
+        r = RegExp('^EUSA(\\d{1,2})$').exec(name);
+        if(r){
+            const
+                leg1   = 12,
+                leg2   = 6,
+                length = decode_months(r[1]);
+            return {
+                name,
+                type:'Swap',
+                leg1,
+                leg2,
+                length,
+                descr:`EUR Swap ${format_months(length)} (${format_months(leg1)} vs ${format_months(leg2)})`,
+            }
+        }
+
+        r = RegExp('^EUSW(\\d*[A-Z]*)V(\\d*[A-Z]*)$').exec(name);
+        if(r){
+            const
+                leg1   = 12,
+                leg2   = decode_months(r[2]),
+                length = decode_months(r[1]);
+            return {
+                name,
+                type:'Swap',
+                leg1,
+                leg2,
+                length,
+                descr:`EUR Swap ${format_months(length)} (${format_months(leg1)} vs ${format_months(leg2)})`,
+            }
+        }
+
+        // r = RegExp('^EUSWE(\\d+)([A-Z])?$').exec(name);
+        r = RegExp('^EUSWE(\\d*[A-Z]*)$').exec(name);
+        if(r){
+            if(last_char_TZ) return;
+            let length = decode_months(r[1]);
+            // const c = r[2];
+            // if(c){
+            //     if(last_char_TZ) return;
+            //     months += c.charCodeAt(0)-'A'.charCodeAt(0)+1;
+            // }
+            return {
+                name,
+                type:'Swap',
+                leg1:'EONIA',
+                length,
+                descr:`EUR Swap (EONIA) ${format_months(length)}`
+            }
+        }
+    } catch (error) {
+        warn(`decode: ${error}`);
+    }
+}
+
 function instrument_info(name) {
+
+    let decoded = decode(name);
+    if(decoded) return decoded;
+
     let
         type = instrument_type(name);
     switch(type){
@@ -222,14 +363,14 @@ function instrument_info(name) {
                     type:'FRA',
                     'start':r[0],
                     'length':r[1],
-                    descr:`FRA ${r[0]}Mx${r[1]}M`
+                    descr:`FRA ${format_months(r[0])}x${format_months(r[1])}`
                 };
             }
         case 'SWAP':
         // info = swap_info(name)||'';
             return {name,type:'SWAP','descr':'SWAP'};
         default:
-            return {type,descr:''};
+            return {name,type,descr:''};
     }
 }
 

@@ -1,4 +1,5 @@
 <script>
+    import {debug,info,warn,error} from './Logs.svelte'
     import {curve_instruments,quotes} from './store.js';
 
     let fra_start=0, fra_length=0;
@@ -23,7 +24,7 @@
 
     function fra_add () {
         if(fra_start<0 || fra_length<0 || (fra_start+fra_length)<=0 ){
-            console.warn(`bad start=${fra_start} and/or length=${fra_length} arguments`);
+            warn(`bad start=${fra_start} and/or length=${fra_length} arguments`);
             return;
         }
         const
@@ -46,7 +47,7 @@
                 return [...v.slice(0,index),...v.slice(index+1,v.length)];
             });
         else{
-            console.warn('fra_del: not found:',v);
+            warn('fra_del: not found:',v);
         }
     }
 
@@ -65,6 +66,7 @@
         <th>Instrument</th>
         <th>Quote</th>
     </tr>
+    <div class="container">
     {#each $curve_instruments as v}
         <tr>
             <td>
@@ -82,6 +84,7 @@
             </td>
         </tr>
     {/each}
+    </div>
 </table>
 
 <form class='fra-add' on:submit|preventDefault={fra_add}>
@@ -95,5 +98,13 @@
 <style>
 .fra-add label,input{
     display: inline;
+}
+.container{
+    height: 300px;
+    background-color: lightblue;
+    overflow: scroll;
+}
+td input {
+    background-color: lightblue;
 }
 </style>

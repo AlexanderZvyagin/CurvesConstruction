@@ -1,33 +1,32 @@
 <script>
     import {createEventDispatcher, onMount} from 'svelte';
-    import {quotes,curve_instruments} from './store.js';
+    import {quotes,curve_instruments,interpolation_type,date} from './store.js';
     import CurveInputData from './CurveInputData.svelte';
     import Modal from './components/Modal.svelte'
     import QuotesTable from './QuotesTable.svelte'
 
     let dispatch = createEventDispatcher();
 
-    let
-        interpolation_type = 'Steffen',
-        date = "2018-02-02";
     onMount(() => {
         // ... Run something after component has mounted
-        dispatch('newDate',date);
+        dispatch('newDate',$date);
     });
 
     let curve_name='';
 
     function handle_submit () {
         dispatch('buildCurve',{
-            interpolation_type,
-            date,
+            interpolation_type:$interpolation_type,
+            date:$date,
             instruments:$curve_instruments.filter(v=>v.use&&isNaN(Number(v.quote))===false),
             curve_name
         });
     }
 
-    $:{
-        dispatch('newDate',date);
+    function newDate (e) {
+        const d = e.target.value;
+        date.update(cur=>d);
+        dispatch('newDate',d);
     }
 </script>
 
@@ -39,7 +38,7 @@
     <form on:submit|preventDefault={handle_submit}>
         <div class="date">
             <label for="date">Date</label>
-            <input id="date" type="date" name="date" min="2011-01-01" max="2019-08-01" bind:value={date}/>
+            <input id="date" type="date" name="date" min="2011-01-01" max="2019-08-01" value={$date} on:change={newDate}/>
             <div class="quotes">
                 <Modal>
                     <div slot="trigger" let:open>
@@ -58,7 +57,7 @@
         </div>
         <div class='interpolation'>
             <label for='interpolation'>Interpolation</label>
-            <select id='interpolation' bind:value={interpolation_type}>
+            <select id='interpolation' value={$interpolation_type} on:change={e=>interpolation_type.update(cur=>e.target.value)}>
                 <option value="PiecewiseConstant">PiecewiseConstant</option>
                 <option value="Linear">Linear</option>
                 <option value="CubicSpline">CubicSpline</option>

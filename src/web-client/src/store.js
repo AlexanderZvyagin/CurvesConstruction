@@ -1,6 +1,12 @@
 import {writable} from 'svelte/store'
 
-let
+export let
+    logs =
+        writable([]),
+    interpolation_type =
+        writable('Steffen'),
+    date =
+        writable("2018-02-02"),
     curve_instruments = writable([
         {type:'FRA',use:true,start: 0,length: 1},
         {type:'FRA',use:true,start: 0,length: 2},
@@ -24,7 +30,7 @@ let
         {type:'FRA',use:true,start:12,length:12},
         {type:'FRA',use:true,start:12,length:18},
     ]),
-    quotes = writable([]),
-    curves = writable([]);
-
-export {curve_instruments, quotes, curves};
+    quotes =
+        writable([]),
+    curves =
+        writable([]);

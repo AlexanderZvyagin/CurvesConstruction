@@ -1,9 +1,11 @@
 <script>
     import {curves} from './store.js';
-    $:{
-        console.log('CurvesBuildInfo',$curves.length);
-        console.log($curves[0]);
-    }
+    import {debug,info,warn,error} from './Logs.svelte'
+
+    // $:{
+    //     debug('CurvesBuildInfo',$curves.length);
+    //     debug($curves[0]);
+    // }
 
     const num = v=> v.toPrecision(4);
 
