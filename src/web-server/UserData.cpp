@@ -7,6 +7,7 @@
 
 #include "YieldCurve.hpp"
 #include "ForwardRateAgreement.hpp"
+#include "Swap.hpp"
 
 using json = nlohmann::json;
 using namespace date::literals;
@@ -90,6 +91,32 @@ void UserData::get_quotes (const json &data, json &pld) {
         quotes.push_back(json{name,value});
 }
 
+Swap create_swap(
+    float fair_rate,
+    YieldCurve &float_curve,
+    float maturity,
+    float dt1,
+    float dt2
+){
+    Swap swap;
+    const float t0 {0};
+
+    LegFixed &lfix = swap.lfix;
+    lfix.t0 = t0;
+    lfix.dt = dt1;
+    lfix.n = std::round(maturity/dt1);
+    lfix.rate = fair_rate;
+
+    LegFloat &lflt = swap.lflt;
+    lflt.t0 = t0;
+    lflt.dt = dt2;
+    lflt.n  = std::round(maturity/dt2);
+    lflt.curve = &float_curve;
+
+    return swap;
+}
+
+
 void UserData::build_curve (const json &data, json &pld) {
     YieldCurve curve;
 
@@ -108,6 +135,14 @@ void UserData::build_curve (const json &data, json &pld) {
             double
                 quote = instr.at("quote").get<double>();
             curve.Add(ForwardRateAgreement(start/12.,length/12.,quote));
+        } else if(type=="Swap") {
+            int
+                length = instr.at("length").get<int>(),
+                leg1   = instr.at("leg1"  ).get<int>(),
+                leg2   = instr.at("leg2"  ).get<int>();
+            double
+                quote = instr.at("quote").get<double>();
+            curve.Add(create_swap(quote,curve,length/12.,leg1/12.,leg2/12.));
         }else{
             debug("skipping: {}",instr.dump());
         }
@@ -167,6 +202,12 @@ void UserData::build_curve (const json &data, json &pld) {
                 jj["type"  ] = "FRA";
                 jj["start" ] = p->start;
                 jj["length"] = p->length;
+            }
+            if(auto p=dynamic_cast<Swap*>(instr.get());p){
+                jj["type"  ] = "Swap";
+                jj["length"] = std::max(p->lfix.dt*p->lfix.n,p->lflt.dt*p->lflt.n);
+                jj["leg1"] = p->lfix.dt;
+                jj["leg2"] = p->lflt.dt;
             }
             js_instr.push_back(std::move(jj));
         }

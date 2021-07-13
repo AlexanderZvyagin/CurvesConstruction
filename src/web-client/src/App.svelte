@@ -3,12 +3,14 @@
     import TimeGrid from './TimeGrid.svelte';
     import ShowCurves from './ShowCurves.svelte';
     import CurveBuildInput from './CurveBuildInput.svelte';
-    import {quotes, date} from './store.js';
+    import {quotes, date, curves} from './store.js';
     import {instrument_info} from './instruments.js';
     import CurvesBuildInfo from './CurvesBuildInfo.svelte'
     import Tabs from './components/Tabs.svelte'
     import QuotesTable from './QuotesTable.svelte'
     import Logs, {debug,info,warn,error} from './Logs.svelte'
+
+
 
     let
         nav_items = ['Curves Construction','Quotes','Logs'],
@@ -19,13 +21,18 @@
         request_id        = 0,
         quotes_request_id = 0;
 
+    function get_url () {
+        const [protocol,path] = window.location.href.split('//');
+        return 'ws://'+path;
+    }
+
     function connect() {
         let
             // url               = 'ws://192.168.1.82:8100',
-            url               = 'ws://naz.hopto.org:8100',
+            // url               = 'ws://naz.hopto.org:8100',
             protocol          = 'curves';
 
-        ws = new WebSocket(url,protocol);
+        ws = new WebSocket(get_url(),protocol);
 
         ws.onopen = () => {
             debug('WebSocket is opened!');
@@ -110,8 +117,8 @@
                     date:the_date,
                 }
             };
-            ws.send(JSON.stringify(data));
             quotes_request_id = request_id;
+            ws.send(JSON.stringify(data));
         }else{
             warn(`WebSocket is not ready:  readyState=${ws.readyState}`);
         }
@@ -125,7 +132,7 @@
                 payload:{
                     ...e.detail,
                     request_id,
-                    points:1000,
+                    points:100,
                 }
             };
             curves.update(cur=>[...cur,{request:data.payload}]);
@@ -140,6 +147,9 @@
         if(get_quotes_trigger)
             get_quotes({detail:$date});
     }
+
+    // console.log('start!');
+    // console.log('url',window.location.href);
 </script>
 
 <main>

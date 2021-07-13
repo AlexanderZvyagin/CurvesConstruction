@@ -14,11 +14,14 @@
 
     let curve_name='';
 
+    const instruments_to_use = v => v.use && isNaN(Number(v.quote))===false;
+    const quote_norm = v => ({...v,quote:v.quote*1e-2});
+
     function handle_submit () {
         dispatch('buildCurve',{
             interpolation_type:$interpolation_type,
             date:$date,
-            instruments:$curve_instruments.filter(v=>v.use&&isNaN(Number(v.quote))===false),
+            instruments:$curve_instruments.filter(instruments_to_use).map(quote_norm),
             curve_name
         });
     }

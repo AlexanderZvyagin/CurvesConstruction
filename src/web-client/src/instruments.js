@@ -307,11 +307,11 @@ function decode (name) {
             }
         }
 
-        r = RegExp('^EUSW(\\d*[A-Z]*)V(\\d*[A-Z]*)$').exec(name);
+        r = RegExp('^EUSW(\\d*[A-U]*)V(\\d*[A-U]*)$').exec(name);
         if(r){
             const
                 leg1   = 12,
-                leg2   = decode_months(r[2]),
+                leg2   = Number(r[2]),
                 length = decode_months(r[1]);
             return {
                 name,
@@ -323,8 +323,8 @@ function decode (name) {
             }
         }
 
-        // r = RegExp('^EUSWE(\\d+)([A-Z])?$').exec(name);
-        r = RegExp('^EUSWE(\\d*[A-Z]*)$').exec(name);
+        // r = RegExp('^EUSWE(\\d+)([A-U])?$').exec(name);
+        r = RegExp('^EUSWE(\\d*[A-U]*)$').exec(name);
         if(r){
             if(last_char_TZ) return;
             let length = decode_months(r[1]);
@@ -374,4 +374,4 @@ function instrument_info(name) {
     }
 }
 
-export {instrument_info};
+export {instrument_info,format_months};

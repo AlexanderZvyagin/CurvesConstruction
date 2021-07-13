@@ -1,6 +1,7 @@
 <script>
     import {debug,info,warn,error} from './Logs.svelte'
-    import {curve_instruments,quotes} from './store.js';
+    import {curve_instruments,quotes} from './store.js'
+    import {format_months} from './instruments.js'
 
     let fra_start=0, fra_length=0;
 
@@ -9,6 +10,7 @@
     }
 
     function fra_compare (a,b) {
+        if(a.type!=='FRA' || b.type!=='FRA' ) return 1;
         if(a.start<b.start) return -1;
         if(a.start>b.start) return  1;
         if(a.length<b.length) return -1;
@@ -51,39 +53,98 @@
         }
     }
 
+    let swap_length=0, swap_leg1=0, swap_leg2=0;
+
+    function swap (length,leg1,leg2) {
+        return {type:'Swap',length:swap_length,leg1:swap_leg1,leg2:swap_leg2,use:true};
+    }
+
+    function swap_compare (a,b) {
+        if(a.type!=='Swap' || b.type!=='Swap' ) return 1;
+        if(a.length<b.length) return -1;
+        if(a.length>b.length) return  1;
+        if(a.leg1<b.leg1) return -1;
+        if(a.leg1>b.leg1) return  1;
+        if(a.leg2<b.leg2) return -1;
+        if(a.leg2>b.leg2) return  1;
+        return 0;
+    }
+
+    function swap_set_quote (swap) {
+        const q = $quotes.find(v=>v.type==='Swap'&&v.length===swap.length&&v.leg1===swap.leg1&&v.leg2===swap.leg2);
+        swap.quote = q ? q.quote : undefined;
+        return swap;
+    }
+
+    function swap_add () {
+        if(swap_length<=0 || swap_leg1<=0 || swap_leg2<=0 ){
+            warn(`bad swap ignore`);
+            return;
+        }
+        const
+            a = swap(swap_length,swap_leg1,swap_leg2),
+            b = $curve_instruments.find(b=>swap_compare(a,b)==0);
+        if(b)
+            return;
+        swap_set_quote(a);
+        curve_instruments.update(current=>{
+            let v = [...current,a];
+            v.sort(swap_compare);
+            return v;
+        });
+    }
+
+    function swap_del (a) {
+        let index = $curve_instruments.findIndex(b=>swap_compare(a,b)==0);
+        if(index>=0)
+            curve_instruments.update(v=>{
+                return [...v.slice(0,index),...v.slice(index+1,v.length)];
+            });
+        else{
+            warn('swap_del: not found:',v);
+        }
+    }
+
     $:{
         // this variable is unused,
         // but it is neededd to trigger a reaction on quotes update
         const quotes_length = $quotes.length;
-        curve_instruments.update(cur=>cur.map(fra=>fra_set_quote(fra)));
+        curve_instruments.update(cur=>cur.map(v=>{
+            if(v.type==='FRA')
+                fra_set_quote(v);
+            else if(v.type==='Swap')
+                swap_set_quote(v);
+            return v;
+        }));
     }
 </script>
 
 <table>
-    <tr>
-        <th></th>
-        <th>Use</th>
-        <th>Instrument</th>
-        <th>Quote</th>
-    </tr>
-    <div class="container">
-    {#each $curve_instruments as v}
-        <tr>
-            <td>
-                <button on:click|preventDefault={()=>fra_del(v)}>del</button>
-            </td>
-            <td>
+    <div class="grid-container">
+        {#each $curve_instruments as v}
+            <div>
+                {#if v.type==='FRA'}
+                    <button on:click|preventDefault={()=>fra_del(v)}>del</button>
+                {:else if v.type==='Swap'}
+                    <button on:click|preventDefault={()=>swap_del(v)}>del</button>
+                {/if}
+            </div>
+            <div>
                 <input type=checkbox bind:checked={v.use}/>
-            </td>
-            <td>
-                FRA {v.start}x{v.length}
-            </td>
-            <td>
+            </div>
+            <div>
+            {#if v.type==='FRA'}
+                FRA {format_months(v.start)}x{format_months(v.length)}
+            {:else if v.type==='Swap'}
+                Swap {format_months(v.length)} ({format_months(v.leg1)} vs {format_months(v.leg2)})
+            {:else}
+                {v.type}
+            {/if}
+            </div>
+            <div>
                 <input type=number value={v.quote} on:change={x=>{v.quote=x.target.value;}} min="any" max="any" step="any"/>
-                <!-- <input type=number bind:value={v.quote} min="any" max="any" step="any"/> -->
-            </td>
-        </tr>
-    {/each}
+            </div>
+        {/each}
     </div>
 </table>
 
@@ -95,12 +156,32 @@
     <input id='length' type=number bind:value={fra_length}>
 </form>
 
+<form class='swap-add' on:submit|preventDefault={swap_add}>
+    <button>Add Swap:</button>
+    <label for='length'>Length</label>
+    <input id='length' type=number bind:value={swap_length}>
+    <label for='leg1'>Leg1</label>
+    <input id='leg1' type=number bind:value={swap_leg1}>
+    <label for='leg2'>Leg2</label>
+    <input id='leg2' type=number bind:value={swap_leg2}>
+</form>
+
 <style>
 .fra-add label,input{
     display: inline;
 }
+.swap-add label,input{
+    display: inline;
+}
 .container{
-    height: 300px;
+    max-height: 300px;
+    background-color: lightblue;
+    overflow: scroll;
+}
+.grid-container{
+    display: grid;
+    grid-template-columns: 1fr 1fr 4fr 2fr;
+    max-height: 300px;
     background-color: lightblue;
     overflow: scroll;
 }
