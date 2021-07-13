@@ -58,6 +58,17 @@ TEST_CASE("fra"){
     curve.Print();
 }
 
+TEST_CASE("fra-pw2"){
+    YieldCurve curve;
+    curve
+        .Add(ForwardRateAgreement(1,1,0.001))
+        .Add(ForwardRateAgreement(2,1,0.0025))
+        .Build (math::Interpolator1D::Type::PiecewiseConstant);
+    curve.Print();
+
+    // printf("GetForwardRate: %g\n",curve.GetForwardRate(1,))
+}
+
 Swap create_swap(
     float fair_rate,
     YieldCurve &float_curve,
