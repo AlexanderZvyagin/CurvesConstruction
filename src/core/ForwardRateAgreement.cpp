@@ -27,19 +27,20 @@ void ForwardRateAgreement::AddToCurve (YieldCurve &curve) const {
 
     // curve.CheckMaturityIncreasing(GetMaturity());
     // const bool empty = curve.GetYields().empty();
-    if( not (t1<=t2 and t2<t3))
+    if( not (t1<=t2 and t2<t3)){
+        printf("%s: t1=%g t2=%g t3=%g\n",__PRETTY_FUNCTION__,t1,t2,t3);
         throw std::invalid_argument(__PRETTY_FUNCTION__);
+    }
 
     const float
-        r12 = empty_curve ? 0 : curve.GetForwardRate(t1,t2),
+        r12_t12 = empty_curve ? 0 : curve.Integral(t1,t2),
         r13 = rate,
-        t12 = t2-t1,
         t23 = t3-t2,
-        t13 = t12+t23,
-        r23 = (r13*t13-r12*t12)/t23;
+        t13 = t3-t1,
+        r23 = (r13*t13-r12_t12)/t23;
 
         // printf("tttt %g %g %g\n",t1,t2,t3);
-        // printf("r:  %g %g   %g %g %g\n",t12,t13,r12,r13,r23);
+        // printf("r:  t13=%g r12_t12=%g   r13=%g r23=%g\n",t13,r12_t12,r13,r23);
 
     curve.SetYield(t3,r23);
 }
