@@ -1,6 +1,11 @@
+<svelte:head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curves Construction</title>
+</svelte:head>
+
 <script>
-    import { onMount } from 'svelte';
-    import TimeGrid from './TimeGrid.svelte';
+    // import { onMount } from 'svelte';
     import ShowCurves from './ShowCurves.svelte';
     import CurveBuildInput from './CurveBuildInput.svelte';
     import {quotes, date, curves} from './store.js';
@@ -9,11 +14,11 @@
     import Tabs from './components/Tabs.svelte'
     import QuotesTable from './QuotesTable.svelte'
     import Logs, {debug,info,warn,error} from './Logs.svelte'
-
-
+    import Components from './Components.svelte'
 
     let
-        nav_items = ['Curves Construction','Quotes','Logs'],
+        development = window.location.href.split('.')[1]==='168',
+        nav_items = ['Curves Construction','Quotes'].concat(development?['Logs','Components']:[]),
         nav_active = nav_items[0];
     let
         get_quotes_trigger = false,
@@ -27,11 +32,7 @@
     }
 
     function connect() {
-        let
-            // url               = 'ws://192.168.1.82:8100',
-            // url               = 'ws://naz.hopto.org:8100',
-            protocol          = 'curves';
-
+        let protocol = 'curves';
         ws = new WebSocket(get_url(),protocol);
 
         ws.onopen = () => {

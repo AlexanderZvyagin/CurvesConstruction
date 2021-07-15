@@ -53,7 +53,7 @@
         }
     }
 
-    let swap_length=0, swap_leg1=0, swap_leg2=0;
+    let swap_length=1, swap_leg1=1, swap_leg2=1;
 
     function swap (length,leg1,leg2) {
         return {type:'Swap',length:swap_length,leg1:swap_leg1,leg2:swap_leg2,use:true};
@@ -117,6 +117,7 @@
             return v;
         }));
     }
+
 </script>
 
 <table>
@@ -142,7 +143,7 @@
             {/if}
             </div>
             <div>
-                <input type=number value={v.quote} on:change={x=>{v.quote=x.target.value;}} min="any" max="any" step="any"/>
+                <input class="quote" type=number value={v.quote} on:change={x=>{v.quote=x.target.value;}} min="any" max="any" step="any"/>
             </div>
         {/each}
     </div>
@@ -151,19 +152,19 @@
 <form class='fra-add' on:submit|preventDefault={fra_add}>
     <button>Add FRA:</button>
     <label for='start'>Start</label>
-    <input id='start' type=number bind:value={fra_start}>
+    <input class="period" id='start' type=number bind:value={fra_start} step=1 min=0>
     <label for='length'>Length</label>
-    <input id='length' type=number bind:value={fra_length}>
+    <input class="period" id='length' type=number bind:value={fra_length} step=1 min=0>
 </form>
 
 <form class='swap-add' on:submit|preventDefault={swap_add}>
     <button>Add Swap:</button>
     <label for='length'>Length</label>
-    <input id='length' type=number bind:value={swap_length}>
+    <input class="period" id='length' type=number bind:value={swap_length} step=1 min=1>
     <label for='leg1'>Leg1</label>
-    <input id='leg1' type=number bind:value={swap_leg1}>
+    <input class="period" id='leg1' type=number bind:value={swap_leg1} step=1 min=1>
     <label for='leg2'>Leg2</label>
-    <input id='leg2' type=number bind:value={swap_leg2}>
+    <input class="period" id='leg2' type=number bind:value={swap_leg2} step=1 min=1>
 </form>
 
 <style>
@@ -173,11 +174,6 @@
 .swap-add label,input{
     display: inline;
 }
-.container{
-    max-height: 300px;
-    background-color: lightblue;
-    overflow: scroll;
-}
 .grid-container{
     display: grid;
     grid-template-columns: 1fr 1fr 4fr 2fr;
@@ -185,7 +181,10 @@
     background-color: lightblue;
     overflow: scroll;
 }
-td input {
-    background-color: lightblue;
+input.quote {
+    max-width: 100px;
+}
+input.period {
+    max-width: 60px;
 }
 </style>
