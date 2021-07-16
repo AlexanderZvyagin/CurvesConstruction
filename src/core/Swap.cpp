@@ -1,8 +1,8 @@
 #include "math.hpp"
-#include "YieldCurve.hpp"
+#include "Curve.hpp"
 #include "Swap.hpp"
 
-float LegFixed::Eval (const YieldCurve &discount_curve) const {
+float LegFixed::Eval (const Curve &discount_curve) const {
     float rv {0};
     for(int i=0;i<n;i++){
         float t = t0 + (i+1)*dt;
@@ -11,7 +11,7 @@ float LegFixed::Eval (const YieldCurve &discount_curve) const {
     return rv*rate*dt;
 }
 
-float LegFloat::Eval (const YieldCurve &discount_curve) const {
+float LegFloat::Eval (const Curve &discount_curve) const {
     float rv {0};
     for(int i=0;i<n;i++){
         float
@@ -24,7 +24,7 @@ float LegFloat::Eval (const YieldCurve &discount_curve) const {
     return rv*dt;
 }
 
-void Swap::AddToCurve (YieldCurve &curve) const {
+void Swap::AddToCurve (Curve &curve) const {
     if(curve.GetType()==math::Interpolator1D::None)
         curve = math::Interpolator1D (
             std::vector<double>(),

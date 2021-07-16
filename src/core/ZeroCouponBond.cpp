@@ -1,11 +1,11 @@
-#include "YieldCurve.hpp"
+#include "Curve.hpp"
 #include "ZeroCouponBond.hpp"
 
-float ZeroCouponBond::Eval (const YieldCurve &curve) const {
+float ZeroCouponBond::Eval (const Curve &curve) const {
     return curve.GetDiscountFactor(GetMaturity());
 }
 
-void ZeroCouponBond::AddToCurve (YieldCurve &curve) const {
+void ZeroCouponBond::AddToCurve (Curve &curve) const {
     if(curve.GetType()==math::Interpolator1D::None)
         curve = math::Interpolator1D (
             std::vector<double>(),

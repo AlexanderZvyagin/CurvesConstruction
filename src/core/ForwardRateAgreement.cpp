@@ -1,11 +1,11 @@
-#include "YieldCurve.hpp"
+#include "Curve.hpp"
 #include "ForwardRateAgreement.hpp"
 
-float ForwardRateAgreement::Eval (const YieldCurve &curve) const {
+float ForwardRateAgreement::Eval (const Curve &curve) const {
     return -std::log(curve.GetDiscountFactor(start,start+length))/length;
 }
 
-void ForwardRateAgreement::AddToCurve (YieldCurve &curve) const {
+void ForwardRateAgreement::AddToCurve (Curve &curve) const {
 
     if(curve.GetType()==math::Interpolator1D::None)
         curve = math::Interpolator1D (

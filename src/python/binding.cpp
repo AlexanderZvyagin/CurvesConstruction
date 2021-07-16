@@ -8,7 +8,7 @@
 #include "ZeroCouponBond.hpp"
 #include "ForwardRateAgreement.hpp"
 #include "Swap.hpp"
-#include "YieldCurve.hpp"
+#include "Curve.hpp"
 
 using namespace pybind11::literals;
 namespace py = pybind11;
@@ -54,7 +54,7 @@ PYBIND11_MODULE(curves, m) {
 
     py::class_<LegFloat> (m, "LegFloat")
         .def(py::init<>())
-        .def(py::init<float,float,int,YieldCurve&>())
+        .def(py::init<float,float,int,Curve&>())
         .def("Eval", &LegFloat::Eval)
         .def("Value", &LegFloat::Value)
         .def("__repr__", &LegFloat::About)
@@ -99,29 +99,29 @@ PYBIND11_MODULE(curves, m) {
         .def("__repr__", &ForwardRateAgreement::About)
     ;
 
-    py::class_<YieldCurve> (m, "YieldCurve")
+    py::class_<Curve> (m, "Curve")
         .def(py::init<>())
-        .def("__repr__", [] (const YieldCurve &c) {std::stringstream s; s<<c; return s.str();})
-        .def("__call__", [] (const YieldCurve &c,float v) {return c(v);})
-        .def("SetYield", &YieldCurve::SetYield)
-        .def("GetDiscountFactor", [] (const YieldCurve &c,float t1) {return c.GetDiscountFactor(t1);})
-        .def("GetDiscountFactor", [] (const YieldCurve &c,float t1,float t2) {return c.GetDiscountFactor(t1,t2);})
-        .def("Add",[] (YieldCurve &c,const ZeroCouponBond &v) {return c.Add(v);})
-        .def("Add",[] (YieldCurve &c,const ForwardRateAgreement &v) {return c.Add(v);})
-        .def("Add",[] (YieldCurve &c,const Swap &v) {return c.Add(v);})
-        .def("GetForwardRate", &YieldCurve::GetForwardRate)
-        .def("GetMaturity", &YieldCurve::GetMaturity)
-        // .def("Print", &YieldCurve::Print)
-        .def("Integral", &YieldCurve::Integral)
-        .def("GetType", [] (const YieldCurve &c) {return c.GetType();})
-        .def("GetType", [] (const YieldCurve &c,const std::string &name) {return YieldCurve::GetType(name);})
-        .def("GetTypeName", &YieldCurve::GetTypeName)
-        .def("GetSize", &YieldCurve::GetSize)
-        .def("GetX", &YieldCurve::GetX)
-        .def("GetY", &YieldCurve::GetY)
+        .def("__repr__", [] (const Curve &c) {std::stringstream s; s<<c; return s.str();})
+        .def("__call__", [] (const Curve &c,float v) {return c(v);})
+        .def("SetYield", &Curve::SetYield)
+        .def("GetDiscountFactor", [] (const Curve &c,float t1) {return c.GetDiscountFactor(t1);})
+        .def("GetDiscountFactor", [] (const Curve &c,float t1,float t2) {return c.GetDiscountFactor(t1,t2);})
+        .def("Add",[] (Curve &c,const ZeroCouponBond &v) {return c.Add(v);})
+        .def("Add",[] (Curve &c,const ForwardRateAgreement &v) {return c.Add(v);})
+        .def("Add",[] (Curve &c,const Swap &v) {return c.Add(v);})
+        .def("GetForwardRate", &Curve::GetForwardRate)
+        .def("GetMaturity", &Curve::GetMaturity)
+        // .def("Print", &Curve::Print)
+        .def("Integral", &Curve::Integral)
+        .def("GetType", [] (const Curve &c) {return c.GetType();})
+        .def("GetType", [] (const Curve &c,const std::string &name) {return Curve::GetType(name);})
+        .def("GetTypeName", &Curve::GetTypeName)
+        .def("GetSize", &Curve::GetSize)
+        .def("GetX", &Curve::GetX)
+        .def("GetY", &Curve::GetY)
         .def("Build",
             [] (
-                YieldCurve &c,
+                Curve &c,
                 math::Interpolator1D::Type itype
             ) {
                 return c.Build(itype);
@@ -130,7 +130,7 @@ PYBIND11_MODULE(curves, m) {
         )
         .def("Build",
             [] (
-                YieldCurve &c,
+                Curve &c,
                 math::Interpolator1D::Type itype,
                 math::Options opts
             ) {
@@ -138,7 +138,7 @@ PYBIND11_MODULE(curves, m) {
             }
         )
         .def("GetInstruments",
-            [] (const YieldCurve &c){
+            [] (const Curve &c){
                 std::vector<std::unique_ptr<Instrument>> v;
                 for(std::map <float,std::shared_ptr<Instrument>>::const_iterator it=c.GetInstruments().cbegin(); it!=c.GetInstruments().cend(); it++)
                     v.emplace_back(it->second->Clone());

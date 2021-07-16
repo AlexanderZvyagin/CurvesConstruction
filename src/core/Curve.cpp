@@ -1,14 +1,14 @@
-#include "YieldCurve.hpp"
+#include "Curve.hpp"
 #include "Instrument.hpp"
 #include "minimizer.hpp"
 
-YieldCurve & YieldCurve::Add (const Instrument &x) {
+Curve & Curve::Add (const Instrument &x) {
     instruments[x.GetMaturity()].reset(x.Clone());
     return *this;
 }
 
 math::Result
-YieldCurve::BuildPiecewiseConstant (void) {
+Curve::BuildPiecewiseConstant (void) {
     *this = math::Interpolator1D();
     // for(auto [t,instr]: GetInstruments())
     //     instr->AddToCurve(*this);
@@ -18,7 +18,7 @@ YieldCurve::BuildPiecewiseConstant (void) {
 }
 
 math::Result
-YieldCurve::Build (
+Curve::Build (
     math::Interpolator1D::Type itype
 ){
     math::Options opts;
@@ -29,7 +29,7 @@ YieldCurve::Build (
 }
 
 math::Result
-YieldCurve::Build (
+Curve::Build (
     math::Interpolator1D::Type itype,
     const math::Options &opts
 ) {
@@ -44,7 +44,7 @@ YieldCurve::Build (
         if(t>0)
             vx.push_back(t);
         else
-            throw std::invalid_argument("YieldCurve::Build: instrument maturity must be >1");
+            throw std::invalid_argument("Curve::Build: instrument maturity must be >1");
     }
 
     std::vector<math::Parameter> pars (vx.size(),math::Parameter(0,1e-2));
@@ -66,15 +66,15 @@ YieldCurve::Build (
         vy.push_back(it->value);
 
     if(vx.size()!=vy.size())
-        throw std::logic_error("YieldCurve::Build: internal error");
+        throw std::logic_error("Curve::Build: internal error");
 
     *this = math::Interpolator1D (vx,vy,itype);
 
     return result;
 }
 
-void YieldCurve::Print(void) const {
-    printf("YieldCurve interpolation type: %s size=%d\n",Name().c_str(),GetSize());
+void Curve::Print(void) const {
+    printf("Curve interpolation type: %s size=%d\n",Name().c_str(),GetSize());
 
 
     std::cout << static_cast<math::Interpolator1D>(*this) << "\n";

@@ -8,11 +8,11 @@
 #include <fmt/ostream.h>
 
 #include "Swap.hpp"
-#include "YieldCurve.hpp"
+#include "Curve.hpp"
 
 TEST_CASE("SwapLegs"){
 
-    YieldCurve curve;
+    Curve curve;
     // curve.SetYield(0,0.05);
 
     LegFixed lfix;
@@ -33,8 +33,8 @@ TEST_CASE("SwapLegs"){
 
 // TEST_CASE("SwapLegs"){
 //
-//     YieldCurve curve;
-//     YieldCurve curve_libor;
+//     Curve curve;
+//     Curve curve_libor;
 //     curve_libor.SetYield(TimePeriod(0),0.03);
 //     curve.SetYield(TimePeriod(0),0.05);
 //
@@ -56,8 +56,8 @@ TEST_CASE("SwapLegs"){
 //
 // TEST_CASE("SwapLegs"){
 //
-//     YieldCurve curve ;
-//     YieldCurve curve_libor;
+//     Curve curve ;
+//     Curve curve_libor;
 //
 //     curve_libor.SetYield(TimePeriod(0),0.03);
 //     curve.SetYield(TimePeriod(0),0.05);

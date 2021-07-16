@@ -3,7 +3,7 @@
 #include <cmath>
 #include <iostream>
 
-class YieldCurve;
+class Curve;
 
 class Instrument {
 public:
@@ -12,9 +12,9 @@ public:
     Instrument (void) {}
     virtual Instrument * Clone (void) const = 0;
     virtual std::string About (void) const {return "";}
-    virtual float Eval (const YieldCurve &curve) const {return NAN;}
+    virtual float Eval (const Curve &curve) const {return NAN;}
     virtual float Value (void) const {return NAN;}
-    virtual void AddToCurve (YieldCurve &curve) const = 0;
+    virtual void AddToCurve (Curve &curve) const = 0;
 };
 
 inline

@@ -3,14 +3,14 @@
 
 #include <cstdio>
 
-#include "YieldCurve.hpp"
+#include "Curve.hpp"
 #include "Instrument.hpp"
 #include "ZeroCouponBond.hpp"
 #include "ForwardRateAgreement.hpp"
 #include "Swap.hpp"
 #include "common.hpp"
 
-void add_zcb(YieldCurve &curve){
+void add_zcb(Curve &curve){
     curve
         .Add (ZeroCouponBond(2,0.8))
         .Add (ZeroCouponBond(1,0.9))
@@ -19,7 +19,7 @@ void add_zcb(YieldCurve &curve){
 }
 
 TEST_CASE("zcb-PiecewiseConstant"){
-    YieldCurve curve;
+    Curve curve;
 
     add_zcb(curve);
     curve.Build (math::Interpolator1D::Type::PiecewiseConstant);
@@ -27,14 +27,14 @@ TEST_CASE("zcb-PiecewiseConstant"){
 }
 
 TEST_CASE("zcb"){
-    YieldCurve curve;
+    Curve curve;
 
     add_zcb(curve);
     curve.Build();
     curve.Print();
 }
 
-void add_fra(YieldCurve &curve){
+void add_fra(Curve &curve){
     curve
         .Add (ForwardRateAgreement(0,1,0.01))
         .Add (ForwardRateAgreement(0.5,2,0.02))
@@ -43,7 +43,7 @@ void add_fra(YieldCurve &curve){
 }
 
 TEST_CASE("fra-PiecewiseConstant"){
-    YieldCurve curve;
+    Curve curve;
 
     add_fra(curve);
     curve.Build (math::Interpolator1D::Type::PiecewiseConstant);
@@ -51,7 +51,7 @@ TEST_CASE("fra-PiecewiseConstant"){
 }
 
 TEST_CASE("fra"){
-    YieldCurve curve;
+    Curve curve;
 
     add_fra(curve);
     curve.Build ();
@@ -59,7 +59,7 @@ TEST_CASE("fra"){
 }
 
 TEST_CASE("fra-pw2"){
-    YieldCurve curve;
+    Curve curve;
     curve
         .Add(ForwardRateAgreement(1,1,0.001))
         .Add(ForwardRateAgreement(2,1,0.0025))
@@ -71,7 +71,7 @@ TEST_CASE("fra-pw2"){
 
 Swap create_swap(
     float fair_rate,
-    YieldCurve &float_curve,
+    Curve &float_curve,
     float maturity,
     float dt=0.5,
     float t0=0
@@ -95,7 +95,7 @@ Swap create_swap(
     return swap;
 }
 
-void add_swap(YieldCurve &curve){
+void add_swap(Curve &curve){
 
     curve.Add(create_swap(0.01,curve,1*year));
     curve.Add(create_swap(0.02,curve,2*year));
@@ -122,21 +122,21 @@ void add_swap(YieldCurve &curve){
 }
 
 TEST_CASE("swap-PiecewiseConstant"){
-    YieldCurve curve;
+    Curve curve;
     add_swap(curve);
     curve.Build (math::Interpolator1D::Type::PiecewiseConstant);
     curve.Print();
 }
 
 TEST_CASE("swap"){
-    YieldCurve curve;
+    Curve curve;
     add_swap(curve);
     curve.Build (math::Interpolator1D::Type::Linear);
     curve.Print();
 }
 
 TEST_CASE("build1"){
-    YieldCurve curve;
+    Curve curve;
 
     curve
         .Add (ForwardRateAgreement(0,1*month,-0.56200*pc))
