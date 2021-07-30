@@ -29,6 +29,17 @@ PYBIND11_MODULE(curves, m) {
         .def("__repr__", [] (const math::Options &v) {std::stringstream s; s<<v; return s.str();});
     ;
 
+    py::class_<math::Result> (m, "MathResult")
+        .def(py::init<>())
+        .def_readwrite("value", &math::Result::value)
+        .def_readwrite("error", &math::Result::error)
+        .def_readwrite("calls", &math::Result::calls)
+        .def_readwrite("code", &math::Result::code)
+        .def_readwrite("x", &math::Result::x)
+        .def_readwrite("error_text", &math::Result::error_text)
+        .def("__repr__", [] (const math::Result &v) {std::stringstream s; s<<v; return s.str();});
+    ;
+
     py::enum_<math::Interpolator1D::Type>(i1d, "Type")
         .value("None",                  math::Interpolator1D::Type::None)
         .value("PiecewiseConstant",     math::Interpolator1D::Type::PiecewiseConstant)
