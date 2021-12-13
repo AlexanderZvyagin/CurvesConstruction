@@ -118,6 +118,30 @@
         }));
     }
 
+    function export_data1 () {
+//        console.log('export');
+//        let fname = 'data.json';
+        
+        var a = document.createElement('a');
+        a.innerHTML = "Click here";
+        a.href     = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify($curve_instruments));
+//        a.target   = '_blank';
+//        a.download = fname;
+        document.body.appendChild(a);
+        
+    }
+
+
+    function export_data () {
+        console.log('saving');
+        var myBlob = new Blob(["CONTENT"], {type: 'text/plain'});
+        var anchor = document.createElement("a");
+        anchor.download = "demo.txt";
+        anchor.url = window.URL.createObjectURL(myBlob);
+        anchor.click(); 
+//        document.body.appendChild(anchor);
+    }
+
 </script>
 
 <table>
@@ -148,6 +172,10 @@
         {/each}
     </div>
 </table>
+<button on:click={()=>console.log($curve_instruments)}>Export data</button>
+<textarea rows="4" cols="50">
+{JSON.stringify($curve_instruments)}
+</textarea>
 
 <form class='fra-add' on:submit|preventDefault={fra_add}>
     <button>Add FRA:</button>

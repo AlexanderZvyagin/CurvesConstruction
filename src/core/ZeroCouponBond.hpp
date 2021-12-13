@@ -21,7 +21,7 @@ public:
         );
         return std::string(buf);
     }
-    float Eval (const Curve &curve) const override;
+    float Eval (const YieldCurve &curve) const override;
     float Value (void) const override {return value;}
-    virtual void AddToCurve (Curve &curve) const;
+    virtual void AddToCurve (YieldCurve &curve) const;
 };

@@ -1,14 +1,14 @@
-#include "Curve.hpp"
+#include "YieldCurve.hpp"
 #include "Instrument.hpp"
 #include "minimizer.hpp"
 
-Curve & Curve::Add (const Instrument &x) {
+YieldCurve & YieldCurve::Add (const Instrument &x) {
     instruments[x.GetMaturity()].reset(x.Clone());
     return *this;
 }
 
 math::Result
-Curve::BuildPiecewiseConstant (void) {
+YieldCurve::BuildPiecewiseConstant (void) {
     *this = math::Interpolator1D();
     // for(auto [t,instr]: GetInstruments())
     //     instr->AddToCurve(*this);
@@ -18,7 +18,7 @@ Curve::BuildPiecewiseConstant (void) {
 }
 
 math::Result
-Curve::Build (
+YieldCurve::Build (
     math::Interpolator1D::Type itype
 ){
     math::Options opts;
@@ -29,7 +29,7 @@ Curve::Build (
 }
 
 math::Result
-Curve::Build (
+YieldCurve::Build (
     math::Interpolator1D::Type itype,
     const math::Options &opts
 ) {
@@ -44,7 +44,7 @@ Curve::Build (
         if(t>0)
             vx.push_back(t);
         else
-            throw std::invalid_argument("Curve::Build: instrument maturity must be >1");
+            throw std::invalid_argument("YieldCurve::Build: instrument maturity must be >1");
     }
 
     std::vector<math::Parameter> pars (vx.size(),math::Parameter(0,1e-2));
@@ -73,8 +73,8 @@ Curve::Build (
     return result;
 }
 
-void Curve::Print(void) const {
-    printf("Curve interpolation type: %s size=%d\n",Name().c_str(),GetSize());
+void YieldCurve::Print(void) const {
+    printf("YieldCurve interpolation type: %s size=%d\n",Name().c_str(),GetSize());
 
 
     std::cout << static_cast<math::Interpolator1D>(*this) << "\n";

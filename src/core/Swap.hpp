@@ -30,9 +30,9 @@ public:
     }
 
     float GetMaturity (void) const override {return dt*n;}
-    float Eval (const Curve &curve) const override;
+    float Eval (const YieldCurve &curve) const override;
     float Value (void) const override {return rate;}
-    void AddToCurve (Curve &curve) const override {
+    void AddToCurve (YieldCurve &curve) const override {
         throw std::logic_error(__PRETTY_FUNCTION__);
     }
 };
@@ -43,10 +43,10 @@ public:
     float dt;
     int n; // number of periods
     // std::shared_ptr<Curve> curve;
-    Curve* curve {nullptr};
+    const YieldCurve* curve {nullptr};
 
     LegFloat (void) {}
-    LegFloat (float t0,float dt,int n,Curve &curve)
+    LegFloat (float t0,float dt,int n,const YieldCurve &curve)
         : t0 (t0)
         , dt (dt)
         , n (n)
@@ -66,8 +66,8 @@ public:
     }
 
     float GetMaturity (void) const override {return dt*n;}
-    float Eval (const Curve &curve) const override;
-    void AddToCurve (Curve &curve) const override {
+    float Eval (const YieldCurve &curve) const override;
+    void AddToCurve (YieldCurve &curve) const override {
         throw std::logic_error(__PRETTY_FUNCTION__);
     }
 };
@@ -82,7 +82,7 @@ public:
     float GetMaturity (void) const override
         {return std::max(lfix.GetMaturity(),lflt.GetMaturity());}
 
-    float Eval (const Curve &curve) const override
+    float Eval (const YieldCurve &curve) const override
         {return lfix.Eval(curve) - lflt.Eval(curve);}
 
     Swap * Clone (void) const override
@@ -104,5 +104,5 @@ public:
     float Value (void) const override
         {return value;}
 
-    void AddToCurve (Curve &curve) const;
+    void AddToCurve (YieldCurve &curve) const;
 };

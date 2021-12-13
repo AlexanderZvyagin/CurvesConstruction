@@ -9,18 +9,18 @@
 
 class Instrument;
 
-class Curve: public math::Interpolator1D {
+class YieldCurve: public math::Interpolator1D {
 private:
     std::map <float,std::shared_ptr<Instrument>> instruments;
 public:
 
     using math::Interpolator1D::operator =;
 
-    Curve (
+    YieldCurve (
         void
     ) {}
 
-    Curve (
+    YieldCurve (
         const std::vector<double> &vx,
         const std::vector<double> &vy,
         math::Interpolator1D::Type itype
@@ -33,7 +33,7 @@ public:
         void
     ) const {return instruments;}
 
-    Curve & Add (const Instrument &x);
+    YieldCurve & Add (const Instrument &x);
 
     math::Result
     Build (
@@ -85,11 +85,11 @@ public:
         throw std::invalid_argument(__PRETTY_FUNCTION__);
     }
 
-    Curve & SetYield (float t,float yield) {
+    YieldCurve & SetYield (float t,float yield) {
         if(iconst)
             iconst -> GetXY() [t] = yield;
         else
-            throw std::invalid_argument("Curve::SetYield() is only available for PiecewiseConstant yield curve.");
+            throw std::invalid_argument("YieldCurve::SetYield() is only available for PiecewiseConstant yield curve.");
         return *this;
     }
 

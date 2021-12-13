@@ -1,6 +1,3 @@
-<script>
-</script>
-
 <script context="module">
 
     import {logs} from './store.js';

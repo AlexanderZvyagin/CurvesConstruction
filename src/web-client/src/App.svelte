@@ -5,20 +5,24 @@
 </svelte:head>
 
 <script>
-    // import { onMount } from 'svelte';
-    import ShowCurves from './ShowCurves.svelte';
-    import CurveBuildInput from './CurveBuildInput.svelte';
-    import {quotes, date, curves} from './store.js';
-    import {instrument_info} from './instruments.js';
+    import ShowCurves from './ShowCurves.svelte'
+    import CurveBuildInput from './CurveBuildInput.svelte'
+    import {quotes, date, curves} from './store.js'
+    import {instrument_info} from './instruments.js'
     import CurvesBuildInfo from './CurvesBuildInfo.svelte'
-    import Tabs from './components/Tabs.svelte'
+    import FlexTabs from './components/FlexTabs.svelte'
     import QuotesTable from './QuotesTable.svelte'
     import Logs, {debug,info,warn,error} from './Logs.svelte'
-    import Components from './Components.svelte'
+    import TableGridJS from './TableGridJS.svelte'
+    // import UPlot from './UPlot.svelte'
+//    import TestPlotly from './TestPlotly.svelte'
+    import TestFlex from './TestFlex.svelte'
 
     let
-        development = window.location.href.split('.')[1]==='168',
-        nav_items = ['Curves Construction','Quotes'].concat(development?['Logs','Components']:[]),
+        development = ['localhost','192.168.1.82'].indexOf(window.location.hostname)>=0,
+        nav_items = ['Curves Construction','Quotes'].concat(development?['Logs','TableGridJS','Flex']:[]),
+        items2 = ['Menu-A','Menu-B','Menu-C','Menu-D','Menu-E'],
+        active2 = items2[0],
         nav_active = nav_items[0];
     let
         get_quotes_trigger = false,
@@ -27,8 +31,11 @@
         quotes_request_id = 0;
 
     function get_url () {
-        const [protocol,path] = window.location.href.split('//');
-        return 'ws://'+path;
+        // const [protocol,path] = window.location.href.split('//');
+        // if( path ===
+        if( window.location.hostname === 'localhost' )
+            return 'ws://192.168.1.82:8100';
+        return 'ws://'+window.location.host;
     }
 
     function connect() {
@@ -44,7 +51,7 @@
             warn('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
             setTimeout(function() {
                 connect();
-            }, 1000);
+            }, 10000);
         };
 
         ws.onerror = function(err) {
@@ -153,11 +160,10 @@
     // console.log('url',window.location.href);
 </script>
 
+<nav class='main-menu'>
+    <FlexTabs items={nav_items} active={nav_active} on:click={e=>nav_active=e.detail}/>
+</nav>
 <main>
-    <div class='tabs'>
-        <Tabs items={nav_items} active={nav_active} on:tabChanged={e=>{nav_active=e.detail;}}/>
-    </div>
-
     {#if nav_active==='Curves Construction' }
         <!-- <button on:click={handle_echo}>echo</button> -->
         <div class='CurveBuildInput'>
@@ -173,6 +179,14 @@
         <QuotesTable data={$quotes}/>
     {:else if nav_active==='Logs'}
         <Logs/>
+    {:else if nav_active==='TableGridJS'}
+        <TableGridJS/>
+    <!-- {:else if nav_active==='UPlot'}
+        <UPlot/> -->
+    {:else if nav_active==='Plotly'}
+        <TestPlotly/>
+    {:else if nav_active==='Flex'}
+        <TestFlex items={items2} active={active2} on:click={e=>active2=e.detail}/>
     {/if}
 
 </main>
@@ -182,6 +196,16 @@
 </footer>
 
 <style>
+.main-menu{
+    position: static;
+    width:100%;
+    top:0;
+    left:0;
+    box-shadow: 0 0 1ch gray;
+}
+/* main{
+    position:absolute;
+} */
 .CurveBuildInput{
     border: solid 1px;
 }

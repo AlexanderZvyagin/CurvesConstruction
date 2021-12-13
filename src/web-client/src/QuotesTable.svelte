@@ -1,5 +1,13 @@
 <script>
     export let data = [];
+    
+    function download(text, name, type) {
+//        let a = document.getElementById("a");
+//        let file = new Blob([text], {type: type});
+//        a.href = URL.createObjectURL(file);
+//        a.download = name;
+        console.log('download');
+    }
 </script>
 
 {#if data.length===0}
@@ -22,6 +30,7 @@
                 <div class='descr item'> {quote.descr||''} </div>
             {/each}
         </div>
+        <button onclick={download}>Export data</button>
     </main>
 {/if}
 

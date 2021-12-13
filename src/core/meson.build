@@ -3,7 +3,7 @@ curveslib = static_library (
 	'curveslib',
 	sources: [
         'math.cpp',
-        'Curve.cpp',
+        'YieldCurve.cpp',
   			'ZeroCouponBond.cpp',
   			'ForwardRateAgreement.cpp',
   			'Swap.cpp',
