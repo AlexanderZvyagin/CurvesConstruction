@@ -7,12 +7,8 @@ pyvenv.cfg
 **/.ipynb
 **/.ipynb_checkpoints
 .vscode
-service
 **/log-info.txt
 **/log-warn.txt
 
-web
-doc
-papers
 archive
 doc.old

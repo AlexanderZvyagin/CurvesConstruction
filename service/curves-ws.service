@@ -1,0 +1,6 @@
+[Unit]
+Description=Curves Web Interface
+
+[Service]
+ExecStart=/home/zvyagin/Projects/QF/CurvesConstruction/service/ws.sh
+WorkingDirectory=/home/zvyagin/Projects/QF/CurvesConstruction
